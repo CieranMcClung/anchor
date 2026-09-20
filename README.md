@@ -6,6 +6,18 @@ There are no streaks, points, overdue badges, panic reds, or shame copy. Tomorro
 
 This repository is a **Kotlin + Jetpack Compose** project (Gradle Kotlin DSL). It replaces the earlier Vite/React PWA in this repo.
 
+## Web preview
+
+A static HTML mock of the timeline lives in `web-preview/` (energy dial, nested floats, Unstuck overlay, transition ramp). It is not the Android app.
+
+**Live (GitHub Pages, after this branch is on `main`):** [https://cieranmcclung.github.io/anchor/](https://cieranmcclung.github.io/anchor/)
+
+Pages is already enabled on this repo (`build_type: workflow`, HTTPS). The `github-pages` environment only deploys from `main`, so the mock goes live when this PR merges. Until then, open `web-preview/index.html` locally, or use the commit CDN link noted on the PR.
+
+```bash
+python3 -m http.server 4173 --directory web-preview
+```
+
 ## Open in Android Studio
 
 1. Install [Android Studio](https://developer.android.com/studio) (Narwhal / Meerkat or newer is fine).

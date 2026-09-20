@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Anchor &amp; Float — preview</title>
+  <meta name="description" content="Calm static preview of the Anchor &amp; Float AuDHD timeline." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="stage">
+    <p class="stage-note">Static preview of the Android app. Nothing is scored. Tomorrow is a clean slate.</p>
+    <div class="phone" id="app">
+      <header class="top">
+        <h1>Anchor &amp; Float</h1>
+        <p class="today" id="today-label">Today — a clean slate</p>
+      </header>
+
+      <section class="dial" aria-label="Energy">
+        <p class="label">Energy</p>
+        <div class="dial-row" role="tablist">
+          <button type="button" role="tab" data-energy="GREEN" class="seg is-on">Flow</button>
+          <button type="button" role="tab" data-energy="AMBER" class="seg">Maintenance</button>
+          <button type="button" role="tab" data-energy="RED" class="seg">Survival</button>
+        </div>
+        <p class="dial-copy" id="energy-copy">Scheduled floats and the pool are all here.</p>
+      </section>
+
+      <aside class="ramp" id="ramp" hidden>
+        <p class="label ramp-kicker">A gentle turn</p>
+        <p class="ramp-title" id="ramp-title"></p>
+        <p class="ramp-body" id="ramp-body"></p>
+        <button type="button" class="text-btn" id="ramp-dismiss">I’ll ease in</button>
+      </aside>
+
+      <main class="board" id="board"></main>
+
+      <button type="button" class="fab" id="unstuck-open">Unstuck</button>
+
+      <div class="overlay" id="overlay" hidden>
+        <div class="overlay-inner">
+          <div>
+            <p class="label" id="unstuck-kicker">Unstuck</p>
+            <h2 id="unstuck-title"></h2>
+            <p class="unstuck-body" id="unstuck-body"></p>
+            <p class="holding" id="unstuck-holding"></p>
+          </div>
+          <div class="overlay-actions">
+            <button type="button" class="btn ghost" id="break-smaller">Break smaller</button>
+            <button type="button" class="btn ghost" id="swap-task">Swap task</button>
+            <button type="button" class="btn primary" id="done-next">Done / Next</button>
+            <button type="button" class="text-btn" id="unstuck-dismiss">Step back</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
