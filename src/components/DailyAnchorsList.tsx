@@ -78,7 +78,7 @@ export function DailyAnchorsList({
             {zoneLabel(zone)}
           </span>
           {(['low', 'medium', 'high'] as Load[]).map((opt) => {
-            const fits = suggested.includes(opt);
+            const fits = zone !== 'unknown' && suggested.includes(opt);
             return (
               <span
                 key={opt}

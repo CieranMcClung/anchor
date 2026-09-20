@@ -32,19 +32,19 @@ export default function App() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (isTypingTarget(e.target)) return;
-
-      if (isCaptureKey(e.key)) {
-        e.preventDefault();
-        setCaptureOpen(true);
-        return;
-      }
-
       if (e.key === 'Escape') {
         setCaptureOpen(false);
         setUnstickOpen(false);
         setAddOpen(false);
         app.dismissOverwhelm();
+        return;
+      }
+
+      if (isTypingTarget(e.target)) return;
+
+      if (isCaptureKey(e.key)) {
+        e.preventDefault();
+        setCaptureOpen(true);
         return;
       }
 
