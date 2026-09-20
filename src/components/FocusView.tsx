@@ -1,36 +1,48 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { FocusSession } from '../types';
+import type { FocusSession, MicroDeconstruction } from '../types';
+import { AgentBanner } from './agents/AgentBanner';
+import styles from './FocusView.module.css';
+import bannerStyles from './agents/AgentBanner.module.css';
+import ui from './ui.module.css';
 import { useAmbient } from '../hooks/useAmbient';
 import { useClock } from '../hooks/useClock';
-import { paralyzedMicroStep } from '../utils/microStart';
+import { SOMATIC_COPY } from '../agents/somatic';
 import { formatDuration, formatWallClock } from '../utils/time';
 import { ProgressRing } from './ProgressRing';
-import styles from './FocusView.module.css';
-import ui from './ui.module.css';
 
 interface Props {
   session: FocusSession;
   ambientEnabled: boolean;
+  showSomaticPrompt?: boolean;
   onPark: () => void;
   onDone: () => void;
   onFinished: () => void;
   onOpenParking: () => void;
-  /** Replace step with a 2-min micro and restart timer. */
-  onParalyzed: (microStep: string) => void;
+  /** Start Un-Stick: fragment into three micro-steps. */
+  onParalyzed: () => void;
+  onCompleteMicroStep: () => void;
   onToggleBodyDouble?: () => void;
+  onInteract?: () => void;
+  onSomaticStart?: () => void;
+  onSomaticDismiss?: () => void;
+  onSomaticMicro?: () => void;
 }
-
-const STUCK_AFTER_MS = 3 * 60 * 1000; // offer initiation helper after ~3 min idle-feeling
 
 export function FocusView({
   session,
   ambientEnabled,
+  showSomaticPrompt = false,
   onPark,
   onDone,
   onFinished,
   onOpenParking,
   onParalyzed,
+  onCompleteMicroStep,
   onToggleBodyDouble,
+  onInteract,
+  onSomaticStart,
+  onSomaticDismiss,
+  onSomaticMicro,
 }: Props) {
   const now = useClock(250);
   const [finishedFired, setFinishedFired] = useState(false);
@@ -38,6 +50,7 @@ export function FocusView({
 
   useAmbient(session.bodyDouble && ambientEnabled);
 
+  const decon = session.deconstruction;
   const totalMs = session.durationMinutes * 60000;
   const elapsed = Math.min(totalMs, now.getTime() - session.startedAt);
   const remainingMs = Math.max(0, session.endsAt - now.getTime());
@@ -51,27 +64,47 @@ export function FocusView({
   const showInitiationHelper =
     !dismissedHelper &&
     !session.isMicro &&
-    elapsed >= STUCK_AFTER_MS &&
+    !decon &&
+    !showSomaticPrompt &&
+    elapsed >= 3 * 60 * 1000 &&
     remainingMs > 0;
 
   useEffect(() => {
+    // Deconstruction steps manage their own completion; don't auto-finish early.
+    if (decon) return;
     if (remainingMs <= 0 && !finishedFired) {
       setFinishedFired(true);
       onFinished();
     }
-  }, [remainingMs, finishedFired, onFinished]);
+  }, [remainingMs, finishedFired, decon, onFinished]);
 
-  const handleParalyzed = () => {
-    const micro = paralyzedMicroStep(session.task, session.definitionOfDone);
-    onParalyzed(micro);
+  const activeStepText = decon
+    ? decon.steps[decon.currentIndex]
+    : session.microStep;
+
+  const handleCompleteStep = () => {
+    onInteract?.();
+    if (!decon) {
+      onDone();
+      return;
+    }
+    onCompleteMicroStep();
   };
 
   return (
-    <div className={ui.screenFocus}>
+    <div
+      className={ui.screenFocus}
+      onPointerDown={() => onInteract?.()}
+      onKeyDown={() => onInteract?.()}
+    >
       <header className={ui.header}>
         <div>
           <h1 className={ui.title}>Focus</h1>
-          <p className={ui.subtitle}>Only this step. Nothing else.</p>
+          <p className={ui.subtitle}>
+            {decon
+              ? 'One tiny step. Then the next.'
+              : 'Only this step. Nothing else.'}
+          </p>
         </div>
         <button
           type="button"
@@ -83,12 +116,13 @@ export function FocusView({
       </header>
 
       <p className={styles.task}>{session.task}</p>
-      <p className={styles.micro}>{session.microStep}</p>
 
-      {session.definitionOfDone && (
-        <p className={styles.dod}>
-          Done when: {session.definitionOfDone}
-        </p>
+      {decon && <DeconBadge decon={decon} />}
+
+      <p className={styles.micro}>{activeStepText}</p>
+
+      {session.definitionOfDone && !decon && (
+        <p className={styles.dod}>Done when: {session.definitionOfDone}</p>
       )}
 
       <ProgressRing progress={progress}>
@@ -96,13 +130,22 @@ export function FocusView({
         <p className={styles.meta}>remaining</p>
       </ProgressRing>
 
-      <p className={styles.meta} style={{ textAlign: 'center', marginTop: '0.85rem' }}>
+      <p
+        className={styles.meta}
+        style={{ textAlign: 'center', marginTop: '0.85rem' }}
+      >
         Elapsed {formatDuration(elapsed / 1000)} · ends {endLabel}
-        {session.estimateMinutes !== session.durationMinutes && (
+        {session.estimateMinutes !== session.durationMinutes && !decon && (
           <>
             <br />
             Estimate {session.estimateMinutes} min · buffered{' '}
             {session.durationMinutes} min (+40%)
+          </>
+        )}
+        {decon && (
+          <>
+            <br />
+            ~2 min per micro-step
           </>
         )}
       </p>
@@ -114,19 +157,45 @@ export function FocusView({
         </p>
       )}
 
+      {showSomaticPrompt && onSomaticStart && onSomaticDismiss && (
+        <div style={{ marginTop: '1rem' }}>
+          <AgentBanner
+            title={SOMATIC_COPY.title}
+            body={SOMATIC_COPY.body}
+            tone="soft"
+            actions={[
+              {
+                label: SOMATIC_COPY.start,
+                primary: true,
+                onClick: onSomaticStart,
+              },
+              {
+                label: SOMATIC_COPY.micro,
+                onClick: () => onSomaticMicro?.() ?? onParalyzed(),
+              },
+              {
+                label: SOMATIC_COPY.dismiss,
+                ghost: true,
+                onClick: onSomaticDismiss,
+              },
+            ]}
+          />
+        </div>
+      )}
+
       {showInitiationHelper && (
         <div className={styles.helper}>
           <p className={styles.helperTitle}>Still finding the start?</p>
           <p className={styles.helperText}>
-            No shame — shrink it to two minutes, or keep quiet company.
+            No shame — break it into three tiny steps, or keep quiet company.
           </p>
           <div className={styles.helperActions}>
             <button
               type="button"
               className={`${ui.btn} ${ui.btnPrimary}`}
-              onClick={handleParalyzed}
+              onClick={onParalyzed}
             >
-              2-min micro-step
+              Un-stick · 3 micro-steps
             </button>
             {onToggleBodyDouble && !session.bodyDouble && (
               <button
@@ -149,24 +218,70 @@ export function FocusView({
       )}
 
       <div className={styles.footer}>
-        <button
-          type="button"
-          className={`${ui.btn} ${ui.btnSecondary} ${styles.stuck}`}
-          onClick={handleParalyzed}
-        >
-          Paralyzed / Stuck
-        </button>
-        <p className={ui.hint} style={{ textAlign: 'center', margin: 0 }}>
-          Swaps in a 2-minute micro-step — no guilt.
-        </p>
+        {decon ? (
+          <button
+            type="button"
+            className={`${ui.btn} ${ui.btnPrimary}`}
+            onClick={handleCompleteStep}
+          >
+            {decon.currentIndex < 2
+              ? `Step ${decon.currentIndex + 1} done · reveal next`
+              : 'Step 3 done'}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className={`${ui.btn} ${ui.btnSecondary} ${styles.stuck}`}
+            onClick={onParalyzed}
+          >
+            I’m Stuck / Paralyzed
+          </button>
+        )}
+        {!decon && (
+          <p className={ui.hint} style={{ textAlign: 'center', margin: 0 }}>
+            Fragments into three ~2-minute steps — only one shown at a time.
+          </p>
+        )}
         <div className={styles.sideActions}>
-          <button type="button" className={`${ui.btn} ${ui.btnSecondary}`} onClick={onPark}>
+          <button
+            type="button"
+            className={`${ui.btn} ${ui.btnSecondary}`}
+            onClick={onPark}
+          >
             Park it
           </button>
-          <button type="button" className={`${ui.btn} ${ui.btnSecondary}`} onClick={onDone}>
+          <button
+            type="button"
+            className={`${ui.btn} ${ui.btnSecondary}`}
+            onClick={onDone}
+          >
             Done
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function DeconBadge({ decon }: { decon: MicroDeconstruction }) {
+  return (
+    <div style={{ textAlign: 'center' }}>
+      <span className={bannerStyles.stepBadge}>
+        Step {decon.currentIndex + 1} of 3
+      </span>
+      <div className={bannerStyles.stepProgress} aria-hidden>
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className={`${bannerStyles.stepDot} ${
+              decon.completed[i]
+                ? bannerStyles.stepDotDone
+                : i === decon.currentIndex
+                  ? bannerStyles.stepDotOn
+                  : ''
+            }`}
+          />
+        ))}
       </div>
     </div>
   );

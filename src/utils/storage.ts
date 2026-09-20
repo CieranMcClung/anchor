@@ -1,14 +1,17 @@
 import type {
+  AgentsState,
   AnchorBlock,
   AppState,
   CognitiveLoad,
   DoseLog,
   FocusSession,
   MedPhase,
+  MicroDeconstruction,
+  OrchestratorMode,
   RoutineSlot,
   Settings,
 } from '../types';
-import { DEFAULT_SETTINGS } from '../types';
+import { DEFAULT_AGENTS, DEFAULT_AGENT_SESSION, DEFAULT_SETTINGS } from '../types';
 import { defaultRailBlocks } from './defaults';
 import { todayKey } from './time';
 
@@ -25,6 +28,15 @@ const PHASE_MAP: Record<string, MedPhase> = {
   offline: 'offline',
 };
 
+const ORCH_MODES: OrchestratorMode[] = [
+  'before',
+  'onset',
+  'peak',
+  'comedown-warn',
+  'comedown',
+  'rest-protection',
+];
+
 function emptyDoseLog(date = todayKey()): DoseLog {
   return { date, timeHHMM: null, loggedAt: null };
 }
@@ -40,6 +52,10 @@ export function createInitialState(): AppState {
     softCloseDoneFor: null,
     startedToday: [],
     doseLog: emptyDoseLog(),
+    agents: {
+      ...DEFAULT_AGENTS,
+      session: { ...DEFAULT_AGENT_SESSION },
+    },
   };
 }
 
@@ -104,6 +120,10 @@ function migrateSettings(raw: unknown): Settings {
       typeof s.useEveningTemplate === 'boolean'
         ? s.useEveningTemplate
         : DEFAULT_SETTINGS.useEveningTemplate,
+    restProtectionEnabled:
+      typeof s.restProtectionEnabled === 'boolean'
+        ? s.restProtectionEnabled
+        : DEFAULT_SETTINGS.restProtectionEnabled,
   };
 }
 
@@ -160,6 +180,25 @@ function inferLoad(name: string, phase?: MedPhase): CognitiveLoad {
   return 'medium';
 }
 
+function migrateDeconstruction(raw: unknown): MicroDeconstruction | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const d = raw as Record<string, unknown>;
+  if (!Array.isArray(d.steps) || d.steps.length !== 3) return undefined;
+  const steps = d.steps.map(String) as [string, string, string];
+  const completed = Array.isArray(d.completed)
+    ? ([
+        Boolean(d.completed[0]),
+        Boolean(d.completed[1]),
+        Boolean(d.completed[2]),
+      ] as [boolean, boolean, boolean])
+    : ([false, false, false] as [boolean, boolean, boolean]);
+  const currentIndex =
+    typeof d.currentIndex === 'number'
+      ? Math.min(2, Math.max(0, Math.floor(d.currentIndex)))
+      : 0;
+  return { steps, completed, currentIndex };
+}
+
 function migrateFocus(raw: unknown): FocusSession | null {
   if (!raw || typeof raw !== 'object') return null;
   const f = raw as Record<string, unknown>;
@@ -186,6 +225,46 @@ function migrateFocus(raw: unknown): FocusSession | null {
     elapsedBeforePause:
       typeof f.elapsedBeforePause === 'number' ? f.elapsedBeforePause : 0,
     isMicro: Boolean(f.isMicro),
+    lastInteractionAt:
+      typeof f.lastInteractionAt === 'number' ? f.lastInteractionAt : f.startedAt,
+    deconstruction: migrateDeconstruction(f.deconstruction),
+  };
+}
+
+function migrateAgents(raw: unknown): AgentsState {
+  const a = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  const sessionRaw =
+    a.session && typeof a.session === 'object'
+      ? (a.session as Record<string, unknown>)
+      : {};
+
+  const mode = ORCH_MODES.includes(a.orchestratorMode as OrchestratorMode)
+    ? (a.orchestratorMode as OrchestratorMode)
+    : DEFAULT_AGENTS.orchestratorMode;
+
+  return {
+    orchestratorMode: mode,
+    showBuriedTasks: Boolean(a.showBuriedTasks),
+    comedownWarnShownFor:
+      typeof a.comedownWarnShownFor === 'string' ? a.comedownWarnShownFor : null,
+    session: {
+      comedownWarnDismissedKey:
+        typeof sessionRaw.comedownWarnDismissedKey === 'string'
+          ? sessionRaw.comedownWarnDismissedKey
+          : null,
+      somaticDismissedForFocusStart:
+        typeof sessionRaw.somaticDismissedForFocusStart === 'number'
+          ? sessionRaw.somaticDismissedForFocusStart
+          : null,
+      lastPromptKind:
+        typeof sessionRaw.lastPromptKind === 'string'
+          ? sessionRaw.lastPromptKind
+          : null,
+      lastPromptAt:
+        typeof sessionRaw.lastPromptAt === 'number'
+          ? sessionRaw.lastPromptAt
+          : null,
+    },
   };
 }
 
@@ -203,13 +282,22 @@ function migrateSchema(raw: Record<string, unknown>): AppState {
     loggedAt: typeof doseRaw?.loggedAt === 'number' ? doseRaw.loggedAt : null,
   };
 
+  const parking = Array.isArray(raw.parking)
+    ? (raw.parking as AppState['parking']).map((p) => ({
+        ...p,
+        cognitiveLoad: p.cognitiveLoad,
+        estimateMinutes: p.estimateMinutes,
+        bufferedMinutes: p.bufferedMinutes,
+      }))
+    : [];
+
   return {
     settings,
     rails: {
       date: typeof railsRaw?.date === 'string' ? railsRaw.date : todayKey(),
       blocks: blocks.length >= 3 ? blocks : defaultRailBlocks(),
     },
-    parking: Array.isArray(raw.parking) ? (raw.parking as AppState['parking']) : [],
+    parking,
     journal: Array.isArray(raw.journal) ? (raw.journal as AppState['journal']) : [],
     focus: migrateFocus(raw.focus),
     lastTimeCheckAt:
@@ -220,6 +308,7 @@ function migrateSchema(raw: Record<string, unknown>): AppState {
       ? (raw.startedToday as string[])
       : [],
     doseLog,
+    agents: migrateAgents(raw.agents),
   };
 }
 
@@ -240,6 +329,11 @@ function migrateDay(state: AppState): AppState {
       },
       startedToday: [],
       focus: null,
+      agents: {
+        ...next.agents,
+        showBuriedTasks: false,
+        session: { ...DEFAULT_AGENT_SESSION },
+      },
     };
   }
 

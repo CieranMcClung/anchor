@@ -1,4 +1,5 @@
 import type {
+  AgentsState,
   AnchorBlock,
   CognitiveLoad,
   DoseLog,
@@ -6,7 +7,7 @@ import type {
   RoutineSlot,
   Settings as SettingsType,
 } from '../types';
-import { LOAD_COPY, PHASE_COPY } from '../types';
+import { LOAD_COPY, ORCHESTRATOR_COPY, PHASE_COPY } from '../types';
 import { buildRailsFromSettings } from '../utils/defaults';
 import { todayKey } from '../utils/time';
 import ui from './ui.module.css';
@@ -15,9 +16,11 @@ interface Props {
   settings: SettingsType;
   doseLog: DoseLog;
   blocks: AnchorBlock[];
+  agents: AgentsState;
   onChange: (next: SettingsType) => void;
   onDoseLogChange: (next: DoseLog) => void;
   onBlocksChange: (blocks: AnchorBlock[]) => void;
+  onAgentsChange: (next: AgentsState) => void;
   onBack: () => void;
 }
 
@@ -37,9 +40,11 @@ export function Settings({
   settings,
   doseLog,
   blocks,
+  agents,
   onChange,
   onDoseLogChange,
   onBlocksChange,
+  onAgentsChange,
   onBack,
 }: Props) {
   const patch = (partial: Partial<SettingsType>) =>
@@ -239,6 +244,45 @@ export function Settings({
           </label>
           <p className={ui.hint}>
             Toggling reseeds morning/evening anchors; your “anytime” items are kept.
+          </p>
+        </div>
+
+        <div className={`${ui.card} ${ui.stack}`}>
+          <h2 style={{ margin: 0, fontSize: '1rem' }}>Agents</h2>
+          <p className={ui.hint} style={{ margin: 0 }}>
+            Always-on helpers. Soft prompts only — never guilt or red alarms.
+          </p>
+          <p className={ui.hint} style={{ margin: 0 }}>
+            Current orchestrator mode:{' '}
+            <strong>{ORCHESTRATOR_COPY[agents.orchestratorMode].label}</strong>
+          </p>
+          <label className={ui.row} style={{ cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={settings.restProtectionEnabled}
+              onChange={(e) =>
+                patch({ restProtectionEnabled: e.target.checked })
+              }
+            />
+            Rest protection — bury high-load tasks in comedown / offline
+          </label>
+          <label className={ui.row} style={{ cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={agents.showBuriedTasks}
+              onChange={(e) =>
+                onAgentsChange({
+                  ...agents,
+                  showBuriedTasks: e.target.checked,
+                })
+              }
+            />
+            Show all buried high-load tasks
+          </label>
+          <p className={ui.hint}>
+            Brain dump: FAB or keyboard <kbd>c</kbd> / <kbd>/</kbd>. Un-stick
+            lives in Single Focus. Somatic reset appears if a focus sits idle
+            past its buffer.
           </p>
         </div>
 

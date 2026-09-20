@@ -1,15 +1,22 @@
 import type {
+  AgentsState,
   AnchorBlock,
   CognitiveLoad,
   DoseLog,
+  OrchestratorMode,
   ParkingItem,
   Settings,
 } from '../types';
-import { LOAD_COPY, PHASE_COPY } from '../types';
+import { LOAD_COPY, ORCHESTRATOR_COPY, PHASE_COPY } from '../types';
+import {
+  isBuriedByRestProtection,
+  reorderByBiologicalWindow,
+} from '../agents/pharmacokinetic';
 import { getDoseContext, isLoadDeemphasised } from '../utils/medPhase';
 import { phaseTip, suggestNextAction } from '../utils/suggestNext';
 import { hhmmToMinutes, minutesSinceMidnight } from '../utils/time';
 import styles from './TodaysRails.module.css';
+import bannerStyles from './agents/AgentBanner.module.css';
 import ui from './ui.module.css';
 
 interface Props {
@@ -17,13 +24,14 @@ interface Props {
   parking: ParkingItem[];
   settings: Settings;
   doseLog: DoseLog;
+  agents: AgentsState;
+  orchestratorMode: OrchestratorMode;
   now: Date;
   onStatus: (id: string, status: AnchorBlock['status']) => void;
   onStartBlock: (block: AnchorBlock) => void;
   onStartParking: (text: string) => void;
+  onToggleShowBuried: () => void;
 }
-
-const LOAD_ORDER: CognitiveLoad[] = ['low', 'medium', 'high'];
 
 function inferStatuses(blocks: AnchorBlock[], now: Date): AnchorBlock[] {
   const nowMins = minutesSinceMidnight(now);
@@ -41,29 +49,59 @@ export function TodaysRails({
   parking,
   settings,
   doseLog,
+  agents,
+  orchestratorMode,
   now,
   onStatus,
   onStartBlock,
   onStartParking,
+  onToggleShowBuried,
 }: Props) {
-  const live = inferStatuses(blocks, now);
   const ctx = getDoseContext(settings, doseLog, now);
   const next = suggestNextAction(blocks, parking, settings, doseLog, now);
   const tip = phaseTip(ctx.phase);
+  const orch = ORCHESTRATOR_COPY[orchestratorMode];
+
+  const reordered = reorderByBiologicalWindow(blocks, orchestratorMode);
+  const live = inferStatuses(reordered, now);
+
+  const buried = live.filter((b) =>
+    isBuriedByRestProtection(
+      b,
+      orchestratorMode,
+      settings.restProtectionEnabled,
+      agents.showBuriedTasks
+    )
+  );
+  const visible = live.filter(
+    (b) =>
+      !isBuriedByRestProtection(
+        b,
+        orchestratorMode,
+        settings.restProtectionEnabled,
+        agents.showBuriedTasks
+      )
+  );
 
   const byLoad = (load: CognitiveLoad) =>
-    live
+    visible
       .filter((b) => b.cognitiveLoad === load)
       .sort(
         (a, b) => hhmmToMinutes(a.plannedStart) - hhmmToMinutes(b.plannedStart)
       );
 
-  const morning = live
+  // Peak: show high→med→low; otherwise low→med→high (orchestrator already sorted list)
+  const loadOrder: CognitiveLoad[] =
+    orchestratorMode === 'peak'
+      ? ['high', 'medium', 'low']
+      : ['low', 'medium', 'high'];
+
+  const morning = visible
     .filter((b) => b.routine === 'morning')
     .sort(
       (a, b) => hhmmToMinutes(a.plannedStart) - hhmmToMinutes(b.plannedStart)
     );
-  const evening = live
+  const evening = visible
     .filter((b) => b.routine === 'evening')
     .sort(
       (a, b) => hhmmToMinutes(a.plannedStart) - hhmmToMinutes(b.plannedStart)
@@ -143,17 +181,21 @@ export function TodaysRails({
         <h2 className={ui.title} style={{ fontSize: '1.05rem' }}>
           Daily anchors
         </h2>
-        <span className={ui.pill}>{PHASE_COPY[ctx.phase].label}</span>
+        <span className={ui.pill}>{orch.label}</span>
       </div>
 
       <p className={ui.hint} style={{ margin: 0 }}>
-        {tip}
+        {orch.hint} · {tip}
+      </p>
+      <p className={ui.hint} style={{ margin: 0 }}>
+        Med phase: {PHASE_COPY[ctx.phase].label}
+        {ctx.isEstimate ? ' (estimate)' : ''}
       </p>
 
       {next && (
         <div className={`${ui.cardQuiet} ${styles.suggest}`}>
           <p className={ui.hint} style={{ margin: 0 }}>
-            Suggested next · matches {PHASE_COPY[ctx.phase].label.toLowerCase()}
+            Suggested next · {orch.label.toLowerCase()}
           </p>
           {next.kind === 'anchor' ? (
             <>
@@ -195,10 +237,12 @@ export function TodaysRails({
       )}
 
       <section>
-        <h3 className={styles.groupTitle}>By cognitive load</h3>
-        {LOAD_ORDER.map((load) => {
+        <h3 className={styles.groupTitle}>
+          By cognitive load
+          {orchestratorMode === 'peak' ? ' · deep first' : ''}
+        </h3>
+        {loadOrder.map((load) => {
           const items = byLoad(load).filter((b) => b.routine === 'anytime');
-          // Also show morning/evening in load groups if templates off
           const extra =
             !settings.useMorningTemplate || !settings.useEveningTemplate
               ? byLoad(load).filter((b) => {
@@ -230,6 +274,36 @@ export function TodaysRails({
           <h3 className={styles.groupTitle}>Evening soft close</h3>
           <ul className={styles.list}>{evening.map(renderItem)}</ul>
         </section>
+      )}
+
+      {buried.length > 0 && !agents.showBuriedTasks && (
+        <p className={bannerStyles.buriedNote}>
+          {buried.length} high-load{' '}
+          {buried.length === 1 ? 'task' : 'tasks'} tucked away for rest
+          protection.{' '}
+          <button
+            type="button"
+            className={`${ui.btn} ${ui.btnGhost}`}
+            style={{ display: 'inline', minHeight: 32, padding: '0.2rem 0.5rem' }}
+            onClick={onToggleShowBuried}
+          >
+            Show all
+          </button>
+        </p>
+      )}
+
+      {agents.showBuriedTasks && settings.restProtectionEnabled && (
+        <p className={bannerStyles.buriedNote}>
+          Showing buried high-load tasks.{' '}
+          <button
+            type="button"
+            className={`${ui.btn} ${ui.btnGhost}`}
+            style={{ display: 'inline', minHeight: 32, padding: '0.2rem 0.5rem' }}
+            onClick={onToggleShowBuried}
+          >
+            Hide again
+          </button>
+        </p>
       )}
 
       <p className={ui.hint}>

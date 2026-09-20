@@ -4,6 +4,15 @@ export type RoutineSlot = 'morning' | 'evening' | 'anytime';
 export type Theme = 'dark' | 'light';
 export type BlockStatus = 'upcoming' | 'now' | 'done' | 'skipped';
 
+/** Pharmacokinetic orchestrator surface mode (persisted). */
+export type OrchestratorMode =
+  | 'before'
+  | 'onset'
+  | 'peak'
+  | 'comedown-warn'
+  | 'comedown'
+  | 'rest-protection';
+
 export type View =
   | 'home'
   | 'start-door'
@@ -13,7 +22,8 @@ export type View =
   | 'soft-close'
   | 'settings'
   | 'first-run'
-  | 'time-check';
+  | 'time-check'
+  | 'somatic-reset';
 
 export interface Settings {
   doseTime: string;
@@ -28,6 +38,8 @@ export interface Settings {
   firstRunComplete: boolean;
   useMorningTemplate: boolean;
   useEveningTemplate: boolean;
+  /** Rest Protection: bury high-load tasks in offline/evening (recoverable). */
+  restProtectionEnabled: boolean;
 }
 
 export interface DoseLog {
@@ -57,6 +69,8 @@ export interface ParkingItem {
   text: string;
   createdAt: number;
   cognitiveLoad?: CognitiveLoad;
+  estimateMinutes?: number;
+  bufferedMinutes?: number;
 }
 
 export interface JournalEntry {
@@ -66,6 +80,15 @@ export interface JournalEntry {
   parkedForTomorrow: string[];
   medNotes: string;
   createdAt: number;
+}
+
+/** Exactly three absurdly small steps from the Un-Stick agent. */
+export interface MicroDeconstruction {
+  steps: [string, string, string];
+  /** 0–2: which step is currently shown. */
+  currentIndex: number;
+  /** Per-step completion flags. */
+  completed: [boolean, boolean, boolean];
 }
 
 export interface FocusSession {
@@ -79,6 +102,28 @@ export interface FocusSession {
   bodyDouble: boolean;
   elapsedBeforePause: number;
   isMicro?: boolean;
+  /** Last user interaction (tap / progress) — for somatic idle detection. */
+  lastInteractionAt?: number;
+  /** Active 3-step un-stick deconstruction. */
+  deconstruction?: MicroDeconstruction;
+}
+
+/** Session-scoped agent prompt memory (not always persisted long-term). */
+export interface AgentSession {
+  comedownWarnDismissedKey: string | null;
+  somaticDismissedForFocusStart: number | null;
+  lastPromptKind: string | null;
+  lastPromptAt: number | null;
+}
+
+export interface AgentsState {
+  /** Last orchestrator mode written by the PK agent. */
+  orchestratorMode: OrchestratorMode;
+  /** Escape hatch: show buried high-load tasks during Rest Protection. */
+  showBuriedTasks: boolean;
+  /** Dose key (date|time) the comedown warning was shown for. */
+  comedownWarnShownFor: string | null;
+  session: AgentSession;
 }
 
 export interface AppState {
@@ -91,9 +136,24 @@ export interface AppState {
   softCloseDoneFor: string | null;
   startedToday: string[];
   doseLog: DoseLog;
+  agents: AgentsState;
 }
 
 export const BUFFER_FACTOR = 1.4;
+
+export const DEFAULT_AGENT_SESSION: AgentSession = {
+  comedownWarnDismissedKey: null,
+  somaticDismissedForFocusStart: null,
+  lastPromptKind: null,
+  lastPromptAt: null,
+};
+
+export const DEFAULT_AGENTS: AgentsState = {
+  orchestratorMode: 'before',
+  showBuriedTasks: false,
+  comedownWarnShownFor: null,
+  session: { ...DEFAULT_AGENT_SESSION },
+};
 
 export const DEFAULT_SETTINGS: Settings = {
   doseTime: '08:00',
@@ -108,6 +168,7 @@ export const DEFAULT_SETTINGS: Settings = {
   firstRunComplete: false,
   useMorningTemplate: true,
   useEveningTemplate: true,
+  restProtectionEnabled: true,
 };
 
 export const PHASE_COPY: Record<
@@ -138,6 +199,36 @@ export const PHASE_COPY: Record<
     label: 'Offline / rest',
     hint: 'Rest, park, or soft close',
     tip: 'Rest framing — park leftovers and be kind to the evening.',
+  },
+};
+
+export const ORCHESTRATOR_COPY: Record<
+  OrchestratorMode,
+  { label: string; hint: string }
+> = {
+  before: {
+    label: 'Before dose',
+    hint: 'Low-friction anchors only.',
+  },
+  onset: {
+    label: 'Onset ramp',
+    hint: 'Warming up — keep load gentle.',
+  },
+  peak: {
+    label: 'Peak window',
+    hint: 'High-load / deep tasks surfaced first.',
+  },
+  'comedown-warn': {
+    label: 'Comedown approaching',
+    hint: 'Skip complex new loops — shift to low-demand anchors.',
+  },
+  comedown: {
+    label: 'Comedown',
+    hint: 'Low-demand recovery preferred.',
+  },
+  'rest-protection': {
+    label: 'Rest protection',
+    hint: 'Heavy tasks tucked away — still recoverable.',
   },
 };
 
