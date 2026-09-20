@@ -56,13 +56,13 @@ User-editable in **Meds → Timing windows**. Product modelling only. UK “XL�
 
 | Setting | Default | Placeholder map |
 |---|---|---|
-| `onsetEndHours` | **2** | Rising / Onset ~0–2h |
-| `peakEndHours` | **6** | Peak ~2–6h (through modelled Tmax window) |
-| `comedownEndHours` | **10** | Taper / Comedown ~6–10h, then Settled (Trough 10h+) |
+| `onsetEndHours` | **2** | **Onset** ~0–2h |
+| `peakEndHours` | **6** | **Peak** ~2–6h |
+| `comedownEndHours` | **10** | **Comedown** ~6–10h+ (chip stays Comedown after 10h; Rest Mode is separate) |
 
-Soft cue ~45 minutes before taper → trough. Never an alarm. Superseded placeholders (`1/5/8` and `2/10/12`) migrate to these defaults.
+Soft dose-log cue near the end of Comedown — not a prediction, never an alarm. Superseded placeholders (`1/5/8` and `2/10/12`) migrate to these defaults.
 
-Visible bar labels: **Onset | Peak | Comedown** only.
+Visible labels: **Onset | Peak | Comedown** only (`efficacy.zone.onset` / `.peak` / `.comedown`).
 
 ## Architecture
 

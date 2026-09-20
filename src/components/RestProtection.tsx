@@ -60,7 +60,7 @@ export function RestGate({ onEnter, suggest, onDismissSuggest }: GateProps) {
       </div>
       {suggest ? (
         <div className={ui.card}>
-          <p className={ui.cue}>{t('efficacy.zone.settled')}</p>
+          <p className={ui.cue}>{t('restMode.enter.body')}</p>
           {onDismissSuggest ? (
             <button
               type="button"

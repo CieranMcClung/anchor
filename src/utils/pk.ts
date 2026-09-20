@@ -146,33 +146,24 @@ export function getPkSnapshot(
   };
 }
 
-export function zoneLabel(zone: PkZone): string {
-  switch (zone) {
-    case 'onset':
-      return 'Onset';
-    case 'peak':
-      return 'Peak';
-    case 'comedown':
-      return 'Comedown';
-    case 'trough':
-      return t('efficacy.zone.settled');
-    case 'unknown':
-      return t('med.notLogged.title');
-  }
+/** Visible PK chrome is Onset | Peak | Comedown only. Post-comedown uses Comedown, not a fourth chip. */
+export function visiblePkZone(
+  zone: PkZone
+): 'onset' | 'peak' | 'comedown' | 'unknown' {
+  if (zone === 'trough') return 'comedown';
+  return zone;
 }
 
-export function zoneCue(zone: PkZone): string {
-  switch (zone) {
+export function zoneLabel(zone: PkZone): string {
+  switch (visiblePkZone(zone)) {
     case 'onset':
-      return t('efficacy.zone.rising');
+      return t('efficacy.zone.onset');
     case 'peak':
       return t('efficacy.zone.peak');
     case 'comedown':
-      return t('efficacy.zone.easing');
-    case 'trough':
-      return t('efficacy.zone.steady');
+      return t('efficacy.zone.comedown');
     case 'unknown':
-      return t('med.notLogged.body');
+      return t('med.notLogged.title');
   }
 }
 

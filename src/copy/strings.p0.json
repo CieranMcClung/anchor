@@ -30,13 +30,15 @@
   "med.logCta": "Log dose",
   "med.skipCta": "Not taking it today",
   "med.adjustedCta": "Log a different amount",
+  "efficacy.zone.onset": "Onset",
+  "efficacy.zone.peak": "Peak",
+  "efficacy.zone.comedown": "Comedown",
   "efficacy.zone.rising": "Coming up",
-  "efficacy.zone.peak": "In the zone",
   "efficacy.zone.steady": "Holding steady",
   "efficacy.zone.easing": "Easing off",
   "efficacy.zone.settled": "Settled",
-  "efficacy.comedownNudge.title": "In about 45 minutes, things may ease",
-  "efficacy.comedownNudge.body": "A gentle heads-up, not a warning. You might want a softer landing — water, a snack, or a slower pace.",
+  "efficacy.comedownNudge.title": "A softer landing, if you want it",
+  "efficacy.comedownNudge.body": "This follows your logged dose time — a gentle cue, not a prediction. Water, a snack, or a slower pace can help. Dismiss anytime.",
   "efficacy.comedownNudge.dismiss": "Got it",
   "task.complete.title": "Done",
   "task.complete.body": "That’s one less thing holding on.",
@@ -76,5 +78,5 @@
   "restMode.grounding.3": "Name three things you can see. You’re here.",
   "restMode.grounding.4": "One longer exhale than inhale. Then another, if you like.",
   "restMode.grounding.5": "Hand on chest or belly. Notice the rise and fall. You’re allowed to pause.",
-  "disclaimer.pkZones": "These timing zones are a product model for organising the day — not medical advice, not a plasma prediction, and not a diagnosis. Placeholders follow a typical Concerta/OROS-class 18 mg pattern. UK “XL” is not one curve: Medikinet XL and Equasym XL often last around 8 hours. Comedown is highly individual. Your own experience comes first. Talk to a clinician about anything that concerns your medication or health."
+  "disclaimer.pkZones": "You set this map from your dose log. Onset, Peak, and Comedown are a user-anchored product model for organising today — not a plasma prediction, not medical advice, and not a diagnosis. Placeholders follow a typical Concerta/OROS-class 18 mg pattern. UK “XL” is not one curve: Medikinet XL and Equasym XL often last around 8 hours. Comedown is highly individual. Your own experience comes first. Talk to a clinician about anything that concerns your medication or health."
 }

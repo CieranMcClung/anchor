@@ -8,12 +8,14 @@ import {
   isSupersededPkPlaceholder,
   normalizePkWindows,
   peakStartHours,
+  visiblePkZone,
   zoneFromElapsed,
+  zoneLabel,
 } from './pk';
 import { bufferedMinutes } from './duration';
 
 describe('Research Phase 1 PK placeholders', () => {
-  it('ships Concerta/OROS-class windows: Onset 0–2, Peak 2–6, Comedown 6–10, Trough 10+', () => {
+  it('ships Concerta/OROS-class windows: Onset 0–2, Peak 2–6, Comedown 6–10', () => {
     expect(DEFAULT_PK_WINDOWS.onsetEndHours).toBe(2);
     expect(DEFAULT_PK_WINDOWS.peakEndHours).toBe(6);
     expect(DEFAULT_PK_WINDOWS.comedownEndHours).toBe(10);
@@ -35,6 +37,11 @@ describe('Research Phase 1 PK placeholders', () => {
     expect(zoneFromElapsed(9.9, w)).toBe('comedown');
     expect(zoneFromElapsed(10, w)).toBe('trough');
     expect(zoneFromElapsed(14, w)).toBe('trough');
+    expect(visiblePkZone('trough')).toBe('comedown');
+    expect(zoneLabel('onset')).toBe('Onset');
+    expect(zoneLabel('peak')).toBe('Peak');
+    expect(zoneLabel('comedown')).toBe('Comedown');
+    expect(zoneLabel('trough')).toBe('Comedown');
   });
 
   it('does not treat 8h as a hard comedown cutoff, and clamps comedown after peak', () => {

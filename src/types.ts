@@ -1,5 +1,5 @@
 export type Load = 'low' | 'medium' | 'high';
-/** Product modelling zones. Timeline chrome stays Onset | Peak | Comedown; Trough is a quiet after-state. */
+/** Product modelling zones. UI chrome is Onset | Peak | Comedown only; post-comedown is not a fourth chip. */
 export type PkZone = 'onset' | 'peak' | 'comedown' | 'trough' | 'unknown';
 export type Route = 'today' | 'meds' | 'rest' | 'settings';
 export type AnchorStatus = 'open' | 'done';
@@ -13,12 +13,12 @@ export const LOAD_CAPS: Record<Load, number> = {
 
 export const GRACE_MINUTES = 3;
 
-/** Soft cue ~45 min before taper → trough. Never an alarm. */
+/** Soft dose-log cue near the end of Comedown. Never an alarm or prediction. */
 export const TROUGH_NUDGE_LEAD_HOURS = 0.75;
 
 /**
  * Concerta/OROS-class P0 placeholders (product modelling, not a plasma curve).
- * Rising/Onset 0–2h · Peak 2–6h · Taper/Comedown 6–10h · Trough 10h+.
+ * Visible labels: Onset | Peak | Comedown only. Rest Mode is a separate surface.
  */
 export const DEFAULT_PK_WINDOWS = {
   onsetEndHours: 2,

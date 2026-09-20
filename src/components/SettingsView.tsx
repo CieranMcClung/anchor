@@ -64,14 +64,15 @@ export function SettingsView({ settings, onChange, onBack }: Props) {
       <div>
         <h1 className={ui.screenTitle}>Settings</h1>
         <p className={ui.cue}>
-          Placeholder windows for organising the day. Concerta/OROS-class 18 mg
-          modelling — not a plasma curve, not a diagnosis, and not an optimisation
-          of medication. Visible bar: Onset, Peak, Comedown.
+          Placeholder windows for organising the day, from your dose log.{' '}
+          {t('efficacy.zone.onset')}, {t('efficacy.zone.peak')}, and{' '}
+          {t('efficacy.zone.comedown')} only — not a plasma curve, not a
+          diagnosis, and not an optimisation of medication.
         </p>
       </div>
 
       <HoursField
-        label="Onset ends (hours after dose)"
+        label={`${t('efficacy.zone.onset')} ends (hours after dose)`}
         field="onsetEndHours"
         value={settings.onsetEndHours}
         min={0.5}
@@ -81,12 +82,12 @@ export function SettingsView({ settings, onChange, onBack }: Props) {
         onCommit={commit}
       />
       <p className={ui.meta}>
-        Default {DEFAULT_PK_WINDOWS.onsetEndHours}h. Rising / Onset placeholder
-        ~0–{DEFAULT_PK_WINDOWS.onsetEndHours}h.
+        Default {DEFAULT_PK_WINDOWS.onsetEndHours}h. {t('efficacy.zone.onset')}{' '}
+        placeholder ~0–{DEFAULT_PK_WINDOWS.onsetEndHours}h after your dose log.
       </p>
 
       <HoursField
-        label="Peak ends (hours after dose)"
+        label={`${t('efficacy.zone.peak')} ends (hours after dose)`}
         field="peakEndHours"
         value={settings.peakEndHours}
         min={2}
@@ -96,13 +97,14 @@ export function SettingsView({ settings, onChange, onBack }: Props) {
         onCommit={commit}
       />
       <p className={ui.meta}>
-        Default {DEFAULT_PK_WINDOWS.peakEndHours}h. Peak placeholder ~2–
-        {DEFAULT_PK_WINDOWS.peakEndHours}h (through the modelled Tmax window —
-        still a product map, not a lab value).
+        Default {DEFAULT_PK_WINDOWS.peakEndHours}h. {t('efficacy.zone.peak')}{' '}
+        placeholder ~{DEFAULT_PK_WINDOWS.onsetEndHours}–
+        {DEFAULT_PK_WINDOWS.peakEndHours}h. A product map from your log, not a lab
+        value.
       </p>
 
       <HoursField
-        label="Comedown ends (soft, hours after dose)"
+        label={`${t('efficacy.zone.comedown')} ends (soft, hours after dose)`}
         field="comedownEndHours"
         value={settings.comedownEndHours}
         min={settings.peakEndHours}
@@ -112,10 +114,10 @@ export function SettingsView({ settings, onChange, onBack }: Props) {
         onCommit={commit}
       />
       <p className={ui.meta}>
-        Default {DEFAULT_PK_WINDOWS.comedownEndHours}h. Taper / Comedown
-        placeholder ~{DEFAULT_PK_WINDOWS.peakEndHours}–
-        {DEFAULT_PK_WINDOWS.comedownEndHours}h, then Settled. A quiet cue ~45
-        minutes before that fold — not an alarm. Highly individual.
+        Default {DEFAULT_PK_WINDOWS.comedownEndHours}h. {t('efficacy.zone.comedown')}{' '}
+        placeholder from ~{DEFAULT_PK_WINDOWS.peakEndHours}h. After that the chip
+        stays {t('efficacy.zone.comedown')} — Rest Mode is separate, if you want
+        it. A quiet dose-log cue may appear; not an alarm.
       </p>
 
       <p className={ui.disclaimer}>{t('disclaimer.pkZones')}</p>

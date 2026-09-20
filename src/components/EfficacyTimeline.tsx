@@ -1,6 +1,6 @@
 import { t } from '../copy/t';
 import type { PkSnapshot } from '../utils/pk';
-import { timelineSegments, zoneCue, zoneLabel } from '../utils/pk';
+import { timelineSegments, visiblePkZone, zoneLabel } from '../utils/pk';
 import styles from './EfficacyTimeline.module.css';
 import ui from './ui.module.css';
 
@@ -25,14 +25,13 @@ export function EfficacyTimeline({ pk }: Props) {
   return (
     <div className={styles.zoneCard}>
       <p className={ui.label}>{zoneLabel(pk.zone)}</p>
-      {!pk.isUnknown ? <p className={ui.meta}>{zoneCue(pk.zone)}</p> : null}
       <div
         className={`${styles.bar} ${pk.isUnknown ? styles.unknown : ''} ${pk.zone === 'trough' ? styles.trough : ''}`}
         role="img"
         aria-label={
           pk.isUnknown
             ? t('med.notLogged.title')
-            : `${zoneLabel(pk.zone)}. Product timing model, not a plasma prediction.`
+            : `${zoneLabel(visiblePkZone(pk.zone))}. User-anchored product model, not a plasma prediction.`
         }
       >
         {segs.map((seg) => {
@@ -53,9 +52,9 @@ export function EfficacyTimeline({ pk }: Props) {
         ) : null}
       </div>
       <div className={styles.ticks}>
-        <span className={ui.meta}>Onset</span>
-        <span className={ui.meta}>Peak</span>
-        <span className={ui.meta}>Comedown</span>
+        <span className={ui.meta}>{t('efficacy.zone.onset')}</span>
+        <span className={ui.meta}>{t('efficacy.zone.peak')}</span>
+        <span className={ui.meta}>{t('efficacy.zone.comedown')}</span>
       </div>
       {pk.isUnknown ? (
         <p className={ui.meta}>{t('med.notLogged.title')}</p>
