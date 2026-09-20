@@ -25,7 +25,8 @@ Command line (with a local SDK):
 
 - **minSdk** 26  
 - **compileSdk / targetSdk** 36  
-- **applicationId / namespace** `com.anchorfloat.app`
+- **applicationId / namespace** `com.anchorfloat.app`  
+- **AGP** 8.13.2 · **Gradle** 8.13 · **Kotlin** 2.1.21 (JVM 17 bytecode; JDK 17 or 21)
 
 ## Product lock
 
