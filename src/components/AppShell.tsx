@@ -1,4 +1,5 @@
 import type { PropsWithChildren } from 'react';
+import { t } from '../copy/t';
 import type { Route } from '../types';
 import ui from './ui.module.css';
 
@@ -22,7 +23,7 @@ export function AppShell({
 }: PropsWithChildren<Props>) {
   return (
     <div className={ui.shell}>
-      <div className={ui.wordmark}>Anchor</div>
+      <div className={ui.wordmark}>{t('brand.appName')}</div>
       <main className={ui.main}>{children}</main>
       <nav className={ui.nav} aria-label="Main">
         <div className={ui.navInner}>

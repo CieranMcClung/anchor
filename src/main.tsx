@@ -1,7 +1,10 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { t } from './copy/t';
 import App from './App';
 import './index.css';
+
+document.title = t('brand.appName');
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

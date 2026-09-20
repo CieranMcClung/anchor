@@ -1,7 +1,7 @@
 {
-  "name": "Anchor",
-  "short_name": "Anchor",
-  "description": "Today-only focus for AuDHD. Methylphenidate XL 18 mg timing is scaffolding, not medical advice.",
+  "name": "Keel",
+  "short_name": "Keel",
+  "description": "Keel (formerly Anchor) by Keel Labs. Today-only focus for AuDHD. Timing is scaffolding, not medical advice.",
   "start_url": "/anchor/",
   "scope": "/anchor/",
   "display": "standalone",

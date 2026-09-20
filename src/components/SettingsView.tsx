@@ -121,7 +121,10 @@ export function SettingsView({ settings, onChange, onBack }: Props) {
         appear; not an alarm.
       </p>
 
-      <p className={ui.disclaimer}>{t('disclaimer.pkZones')}</p>
+      <p className={ui.disclaimer}>
+        {t('brand.appName')} ({t('brand.formerlySubtitle')}), {t('brand.orgName')}.{' '}
+        {t('disclaimer.pkZones')}
+      </p>
 
       <button type="button" className={`${ui.btn} ${ui.btnLg} ${ui.btnGhost}`} onClick={onBack}>
         Back to Meds

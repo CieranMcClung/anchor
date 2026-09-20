@@ -14,6 +14,9 @@
       "missed your chance"
     ]
   },
+  "brand.appName": "Keel",
+  "brand.orgName": "Keel Labs",
+  "brand.formerlySubtitle": "formerly Anchor",
   "empty.noTasks.title": "Nothing on the list right now",
   "empty.noTasks.body": "That’s fine. Add something when you’re ready, or leave it quiet.",
   "empty.noTasks.cta": "Add a task",

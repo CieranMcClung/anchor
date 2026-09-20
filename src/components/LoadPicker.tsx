@@ -37,6 +37,9 @@ export function LoadPicker({ onChoose, onSkip }: Props) {
         {t('habit.skippedDay.cta')}
       </button>
       <p className={ui.meta}>{t('habit.skippedDay.body')}</p>
+      <p className={ui.meta}>
+        {t('brand.orgName')} · {t('brand.formerlySubtitle')}
+      </p>
     </section>
   );
 }

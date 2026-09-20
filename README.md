@@ -1,4 +1,6 @@
-# Anchor
+# Keel
+
+Display name **Keel** by **Keel Labs** (`brand.appName` / `brand.orgName`). One-release subtitle: formerly Anchor. Repo and Pages path stay `/anchor/`.
 
 Calm, local-first P0 for adult AuDHD on **Methylphenidate XL 18 mg**. Bridge intent → execution. Zero shame. No streaks, no overdue chrome, no red warnings.
 

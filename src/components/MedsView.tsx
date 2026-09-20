@@ -103,7 +103,9 @@ export function MedsView({
         Timing windows
       </button>
 
-      <p className={ui.disclaimer}>{t('disclaimer.pkZones')}</p>
+      <p className={ui.disclaimer}>
+        {t('brand.appName')}, {t('brand.orgName')}. {t('disclaimer.pkZones')}
+      </p>
     </section>
   );
 }
