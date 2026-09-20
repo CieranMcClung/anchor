@@ -101,7 +101,7 @@ export function SettingsView({ settings, onChange, onBack }: Props) {
       <p className={ui.meta}>
         Default {DEFAULT_PK_WINDOWS.peakEndHours}h. {t('efficacy.zone.peak')} is
         the focus-energy plateau ~6–{DEFAULT_PK_WINDOWS.peakEndHours}h — a
-        user-anchored map from your log, not a plasma Tmax and not 2–6h Peak.
+        user-anchored map from your log, not 2–6h Peak.
       </p>
 
       <HoursField
