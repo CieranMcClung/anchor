@@ -5,7 +5,437 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Anchor &amp; Float — preview</title>
   <meta name="description" content="Calm static preview of the Anchor &amp; Float AuDHD timeline." />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+@font-face {
+  font-family: "Atkinson Hyperlegible";
+  src: url("fonts/atkinson_hyperlegible_regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Atkinson Hyperlegible";
+  src: url("fonts/atkinson_hyperlegible_bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --sage: #8a9a86;
+  --slate: #606c76;
+  --charcoal: #2b2d42;
+  --amber: #dda15e;
+  --rose: #bc6c25;
+  --paper: #f3eee4;
+  --elevated: #faf6ee;
+  --inset: #e7e1d4;
+  --outline: #d4cbbb;
+  --tap: 48px;
+  --tap-lg: 56px;
+  font-family: "Atkinson Hyperlegible", system-ui, "Segoe UI", sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: #e4ddd0;
+  color: var(--charcoal);
+}
+
+body {
+  font-size: 17px;
+  line-height: 1.55;
+  letter-spacing: 0.02em;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+.stage {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px 48px;
+}
+
+.stage-note {
+  max-width: 390px;
+  margin-bottom: 14px;
+  color: var(--slate);
+  font-size: 14px;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.phone {
+  position: relative;
+  width: min(100%, 390px);
+  min-height: 760px;
+  background: var(--paper);
+  border: 1px solid var(--outline);
+  border-radius: 28px;
+  padding: 22px 20px 108px;
+  box-shadow: 0 18px 40px rgba(43, 45, 66, 0.12);
+  overflow: hidden;
+}
+
+.top h1 {
+  font-size: 22px;
+  line-height: 30px;
+}
+
+.today {
+  margin-top: 4px;
+  color: var(--slate);
+  font-size: 15px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--slate);
+}
+
+.dial {
+  margin-top: 18px;
+}
+
+.dial-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 6px;
+  background: var(--elevated);
+  border: 1px solid var(--outline);
+  border-radius: 22px;
+}
+
+.seg {
+  flex: 1;
+  min-height: var(--tap-lg);
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.seg.is-on[data-energy="GREEN"] {
+  background: var(--sage);
+  color: var(--elevated);
+}
+
+.seg.is-on[data-energy="AMBER"] {
+  background: var(--amber);
+  color: var(--elevated);
+}
+
+.seg.is-on[data-energy="RED"] {
+  background: var(--rose);
+  color: var(--elevated);
+}
+
+.dial-copy {
+  margin-top: 10px;
+  color: var(--slate);
+  font-size: 15px;
+}
+
+.ramp {
+  margin-top: 16px;
+  padding: 16px 18px;
+  background: var(--inset);
+  border-radius: 20px;
+}
+
+.ramp-kicker {
+  color: var(--sage);
+}
+
+.ramp-title {
+  margin-top: 6px;
+  font-weight: 700;
+  font-size: 17px;
+}
+
+.ramp-body {
+  margin-top: 6px;
+  color: var(--slate);
+  font-size: 15px;
+}
+
+.ramp .text-btn {
+  display: block;
+  margin-left: auto;
+}
+
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.anchor {
+  background: var(--elevated);
+  border: 1px solid var(--outline);
+  border-radius: 22px;
+  padding: 16px;
+}
+
+.anchor.is-selected {
+  border-color: var(--sage);
+  border-width: 2px;
+}
+
+.anchor-head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-height: var(--tap);
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 0;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--sage);
+  flex-shrink: 0;
+}
+
+.clock {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--slate);
+}
+
+.anchor-title {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.slot {
+  margin: 12px 0 6px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--slate);
+}
+
+.quiet {
+  margin-top: 8px;
+  color: var(--slate);
+  font-size: 15px;
+}
+
+.empty {
+  background: var(--elevated);
+  border-radius: 18px;
+  padding: 18px;
+  color: var(--slate);
+}
+
+.pool-head h2 {
+  font-size: 17px;
+}
+
+.pool-head p {
+  margin-top: 4px;
+  color: var(--slate);
+  font-size: 15px;
+}
+
+.float {
+  width: 100%;
+  margin-top: 8px;
+  padding: 14px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--inset);
+  text-align: left;
+}
+
+.float.is-focused {
+  box-shadow: inset 0 0 0 2px var(--sage);
+}
+
+.chip-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.chip {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.chip.essential { background: var(--sage); }
+.chip.high { background: var(--rose); }
+.chip.light { background: var(--amber); }
+.chip.float { background: var(--slate); }
+
+.meta {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.meta.essential { color: var(--sage); }
+.meta.high { color: var(--rose); }
+.meta.light { color: var(--amber); }
+.meta.float { color: var(--slate); }
+
+.in-hand {
+  color: var(--sage);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.float h3 {
+  margin-top: 6px;
+  font-size: 17px;
+}
+
+.note {
+  margin-top: 4px;
+  color: var(--slate);
+  font-size: 15px;
+}
+
+.row-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.text-btn,
+.row-actions button {
+  min-height: var(--tap);
+  padding: 8px 12px;
+  border: 0;
+  background: transparent;
+  color: var(--slate);
+  font-weight: 700;
+}
+
+.fab {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  min-height: var(--tap-lg);
+  padding: 0 22px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--sage);
+  color: var(--elevated);
+  font-weight: 700;
+  box-shadow: 0 8px 18px rgba(138, 154, 134, 0.35);
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--paper);
+  z-index: 20;
+  display: flex;
+  justify-content: center;
+  overflow: auto;
+}
+
+.overlay[hidden],
+.ramp[hidden] {
+  display: none;
+}
+
+.overlay-inner {
+  width: min(100%, 390px);
+  min-height: 100%;
+  padding: 28px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.overlay h2 {
+  margin-top: 8px;
+  font-size: 28px;
+  line-height: 1.25;
+}
+
+.unstuck-body {
+  margin-top: 12px;
+  color: var(--slate);
+  font-size: 17px;
+}
+
+.holding {
+  margin-top: 16px;
+  padding: 12px 14px;
+  background: var(--inset);
+  border-radius: 14px;
+  color: var(--slate);
+}
+
+.overlay-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 12px;
+}
+
+.btn {
+  min-height: var(--tap-lg);
+  width: 100%;
+  border-radius: 16px;
+  font-weight: 700;
+}
+
+.btn.ghost {
+  background: transparent;
+  border: 1.5px solid var(--outline);
+}
+
+.btn.primary {
+  border: 0;
+  background: var(--sage);
+  color: var(--elevated);
+}
+
+.kicker-flow { color: var(--sage); }
+.kicker-amber { color: var(--amber); }
+.kicker-red { color: var(--rose); }
+
+  </style>
 </head>
 <body>
   <div class="stage">
@@ -56,6 +486,396 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script>
+const ENERGY_COPY = {
+  GREEN: "Scheduled floats and the pool are all here.",
+  AMBER: "Core anchors and lighter floats. The rest can wait.",
+  RED: "Essentials only. That is plenty.",
+};
+
+const ANCHORS = [
+  {
+    id: 1,
+    title: "Morning landing",
+    clock: "08:00",
+    minutes: 8 * 60,
+    isCore: true,
+    isSurvival: true,
+    hint: "Feel both feet on the floor. Unclench your jaw if it is tight.",
+  },
+  {
+    id: 2,
+    title: "Work shift",
+    clock: "09:00",
+    minutes: 9 * 60,
+    isCore: true,
+    isSurvival: false,
+    hint: "A slow stretch, then look at the first surface you will use.",
+  },
+  {
+    id: 3,
+    title: "Lunch",
+    clock: "13:00",
+    minutes: 13 * 60,
+    isCore: true,
+    isSurvival: true,
+    hint: "Something to eat. Sitting down counts.",
+  },
+  {
+    id: 4,
+    title: "Wind-down",
+    clock: "18:00",
+    minutes: 18 * 60,
+    isCore: false,
+    isSurvival: false,
+    hint: "Dim a light, or put a hand on your chest for two breaths.",
+  },
+];
+
+const seedFloats = () => [
+  { id: 1, title: "Drink a glass of water", note: "That’s a full step.", anchorId: 1, slot: "BEFORE", essential: true, light: true, high: false, status: "PENDING" },
+  { id: 2, title: "Take morning meds, if you use them", note: "No rush. Log it in your own way.", anchorId: 1, slot: "BEFORE", essential: true, light: true, high: false, status: "PENDING" },
+  { id: 3, title: "Put both feet on the floor", note: "Just that.", anchorId: 1, slot: "AFTER", essential: false, light: true, high: false, status: "PENDING" },
+  { id: 4, title: "Open the laptop lid", note: "Opening it is enough to start.", anchorId: 2, slot: "BEFORE", essential: false, light: true, high: false, status: "PENDING" },
+  { id: 5, title: "The one message that actually matters", note: "High-stakes, not urgent-red. Send or park — both are fine.", anchorId: 2, slot: "AFTER", essential: false, light: false, high: true, status: "PENDING" },
+  { id: 6, title: "Tidy the desktop icons — optional", note: "Nice-to-have. Hidden when energy is lower.", anchorId: 2, slot: "AFTER", essential: false, light: false, high: false, status: "PENDING" },
+  { id: 7, title: "Refill water on the way", note: "Between work and lunch. No clock on this.", anchorId: 2, slot: "BETWEEN", essential: true, light: true, high: false, status: "PENDING" },
+  { id: 8, title: "Eat something with a bit of protein", note: "A snack counts.", anchorId: 3, slot: "BEFORE", essential: true, light: true, high: false, status: "PENDING" },
+  { id: 9, title: "Step outside for a minute", note: "If you can. The doorway counts.", anchorId: 3, slot: "AFTER", essential: false, light: true, high: false, status: "PENDING" },
+  { id: 10, title: "Plug in the phone", note: "A quiet close. Flow-only.", anchorId: 4, slot: "AFTER", essential: false, light: false, high: false, status: "PENDING" },
+  { id: 11, title: "Sort the junk drawer", note: "In the pool. Not on a clock.", anchorId: null, slot: "POOL", essential: false, light: false, high: false, status: "PENDING" },
+  { id: 12, title: "Text the dentist back", note: "High-consequence, no due-date shame. Whenever you can.", anchorId: null, slot: "POOL", essential: false, light: false, high: true, status: "PENDING" },
+  { id: 13, title: "Lay out tomorrow’s clothes", note: "Optional. Skip without comment.", anchorId: null, slot: "POOL", essential: false, light: false, high: false, status: "PENDING" },
+];
+
+const state = {
+  energy: "GREEN",
+  floats: seedFloats(),
+  focusedId: 1,
+  selectedAnchorId: null,
+  rampDismissed: false,
+  nextId: 100,
+};
+
+const isOpen = (task) => task.status !== "DONE";
+const isOnBoard = (task) => task.anchorId != null;
+const isPool = (task) => task.anchorId == null || task.slot === "POOL";
+
+function isTaskVisible(task) {
+  if (!isOpen(task)) return false;
+  if (state.energy === "GREEN") return true;
+  if (state.energy === "AMBER") {
+    const lightOrNeeded = task.light || task.essential || task.high;
+    return (isOnBoard(task) && lightOrNeeded) || (isPool(task) && task.essential);
+  }
+  return task.essential || task.high;
+}
+
+function isAnchorVisible(anchor, children) {
+  if (state.energy === "GREEN") return true;
+  if (state.energy === "AMBER") return anchor.isCore || children.length > 0;
+  return children.length > 0 || anchor.isSurvival;
+}
+
+function visibleFloats() {
+  return state.floats.filter(isTaskVisible);
+}
+
+function focusedTask() {
+  return visibleFloats().find((t) => t.id === state.focusedId) || visibleFloats()[0] || null;
+}
+
+function unstuckCopy(task) {
+  const name = task?.title?.trim() || "";
+  if (state.energy === "GREEN") {
+    return {
+      title: "One quiet start",
+      body: name
+        ? `Open “${name}” and stay with it for two minutes. Stopping is allowed.`
+        : "Pick the nearest float and just open it. Two minutes is a full start.",
+    };
+  }
+  if (state.energy === "AMBER") {
+    return {
+      title: "The lightest next step",
+      body: name
+        ? `You don’t have to finish “${name}”. Touch it once, or swap to something lighter.`
+        : "Touch the next light float, or swap. Either is a complete move.",
+    };
+  }
+  return {
+    title: "Just this",
+    body: task?.essential
+      ? `Do “${name}” if you can. If not: sip water. That is the whole list.`
+      : "Sip water, or eat a little something. Nothing else is required.",
+  };
+}
+
+function smallerTitle(task) {
+  const trimmed = task.title.trim();
+  if (task.essential) return `Just the first sip or bite — “${trimmed}”`;
+  if (trimmed.length <= 22) return `Open “${trimmed}” — one minute only`;
+  return `Just open it: ${trimmed.slice(0, 28).trim()}…`;
+}
+
+function chipKind(task) {
+  if (task.essential) return "essential";
+  if (task.high) return "high";
+  if (task.light) return "light";
+  return "float";
+}
+
+function chipLabel(task) {
+  if (task.essential) return "Essential";
+  if (task.high) return "High-stakes";
+  if (task.light) return "Light";
+  return "Float";
+}
+
+function formatToday() {
+  const formatted = new Date().toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+  return `Today · ${formatted}`;
+}
+
+function nearestAnchor() {
+  const now = new Date();
+  const minutes = now.getHours() * 60 + now.getMinutes();
+  return (
+    ANCHORS.find((a) => a.minutes - minutes >= 1 && a.minutes - minutes <= 15) ||
+    ANCHORS.find((a) => a.minutes > minutes) ||
+    ANCHORS[0]
+  );
+}
+
+function floatCard(task) {
+  const kind = chipKind(task);
+  const focused = focusedTask()?.id === task.id;
+  return `
+    <article class="float ${focused ? "is-focused" : ""}" data-task="${task.id}">
+      <div class="chip-row">
+        <span class="chip ${kind}"></span>
+        <span class="meta ${kind}">${chipLabel(task)}</span>
+        ${task.status === "IN_PROGRESS" ? '<span class="in-hand">In hand</span>' : ""}
+      </div>
+      <h3>${escapeHtml(task.title)}</h3>
+      ${task.note ? `<p class="note">${escapeHtml(task.note)}</p>` : ""}
+      <div class="row-actions">
+        <button type="button" data-hold="${task.id}">Hold</button>
+        <button type="button" data-done="${task.id}">Done</button>
+      </div>
+    </article>
+  `;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function renderBoard() {
+  const board = document.getElementById("board");
+  const visible = visibleFloats();
+  const sections = [];
+
+  ANCHORS.forEach((anchor) => {
+    const children = visible.filter((t) => t.anchorId === anchor.id && t.slot !== "POOL");
+    if (!isAnchorVisible(anchor, children)) return;
+    const before = children.filter((t) => t.slot === "BEFORE");
+    const between = children.filter((t) => t.slot === "BETWEEN");
+    const after = children.filter((t) => t.slot === "AFTER");
+    const selected = state.selectedAnchorId === anchor.id;
+    sections.push(`
+      <section class="anchor ${selected ? "is-selected" : ""}">
+        <button type="button" class="anchor-head" data-anchor="${anchor.id}">
+          <span class="dot"></span>
+          <span>
+            <span class="clock">${anchor.clock}</span>
+            <span class="anchor-title">${escapeHtml(anchor.title)}</span>
+          </span>
+        </button>
+        ${before.length ? `<p class="slot">Before</p>${before.map(floatCard).join("")}` : ""}
+        ${between.length ? `<p class="slot">Between</p>${between.map(floatCard).join("")}` : ""}
+        ${after.length ? `<p class="slot">After</p>${after.map(floatCard).join("")}` : ""}
+        ${children.length === 0 ? `<p class="quiet">No floats here. The milestone still stands.</p>` : ""}
+      </section>
+    `);
+  });
+
+  const pool = visible.filter(isPool);
+  if (pool.length) {
+    sections.push(`
+      <div class="pool-head">
+        <h2>Pool</h2>
+        <p>No clock. Pick one if it helps — or leave it.</p>
+      </div>
+      ${pool.map(floatCard).join("")}
+    `);
+  }
+
+  if (!sections.length) {
+    const empty = {
+      GREEN: "Nothing on the board. That’s fine. Add something when you’re ready, or leave it quiet.",
+      AMBER: "Maintenance pace. If the board is empty, you can rest here.",
+      RED: "No essentials right now. That’s okay.",
+    };
+    sections.push(`<p class="empty">${empty[state.energy]}</p>`);
+  }
+
+  board.innerHTML = sections.join("");
+}
+
+function renderRamp() {
+  const ramp = document.getElementById("ramp");
+  if (state.rampDismissed) {
+    ramp.hidden = true;
+    return;
+  }
+  const anchor = nearestAnchor();
+  document.getElementById("ramp-title").textContent = `${anchor.clock}  ·  ${anchor.title}`;
+  document.getElementById("ramp-body").textContent = `${anchor.title} is nearby. ${anchor.hint}`;
+  ramp.hidden = false;
+}
+
+function render() {
+  document.getElementById("today-label").textContent = formatToday();
+  document.getElementById("energy-copy").textContent = ENERGY_COPY[state.energy];
+  document.querySelectorAll(".seg").forEach((btn) => {
+    btn.classList.toggle("is-on", btn.dataset.energy === state.energy);
+    btn.setAttribute("aria-selected", btn.dataset.energy === state.energy ? "true" : "false");
+  });
+  renderRamp();
+  renderBoard();
+}
+
+function openUnstuck() {
+  const task = focusedTask();
+  if (task) state.focusedId = task.id;
+  const copy = unstuckCopy(task);
+  const overlay = document.getElementById("overlay");
+  document.getElementById("unstuck-kicker").className = `label kicker-${state.energy === "GREEN" ? "flow" : state.energy === "AMBER" ? "amber" : "red"}`;
+  document.getElementById("unstuck-title").textContent = copy.title;
+  document.getElementById("unstuck-body").textContent = copy.body;
+  document.getElementById("unstuck-holding").textContent = task ? `Holding: ${task.title}` : "";
+  overlay.hidden = false;
+  document.getElementById("unstuck-open").hidden = true;
+}
+
+function closeUnstuck() {
+  document.getElementById("overlay").hidden = true;
+  document.getElementById("unstuck-open").hidden = false;
+}
+
+function completeTask(id) {
+  const task = state.floats.find((t) => t.id === id);
+  if (!task) return;
+  task.status = "DONE";
+  const next = visibleFloats()[0];
+  state.focusedId = next?.id ?? null;
+  closeUnstuck();
+  render();
+}
+
+function holdTask(id) {
+  state.floats.forEach((t) => {
+    if (t.status === "IN_PROGRESS") t.status = "PENDING";
+  });
+  const task = state.floats.find((t) => t.id === id);
+  if (!task) return;
+  task.status = "IN_PROGRESS";
+  state.focusedId = id;
+  render();
+}
+
+function breakSmaller() {
+  const task = focusedTask();
+  if (!task) return;
+  const micro = {
+    id: state.nextId++,
+    title: smallerTitle(task),
+    note: "A smaller piece. Stopping is allowed.",
+    anchorId: task.anchorId,
+    slot: task.slot,
+    essential: task.essential,
+    light: true,
+    high: false,
+    status: "PENDING",
+  };
+  const index = state.floats.indexOf(task);
+  state.floats.splice(index, 0, micro);
+  state.focusedId = micro.id;
+  closeUnstuck();
+  render();
+}
+
+function swapTask() {
+  const visible = visibleFloats();
+  const current = focusedTask();
+  if (!current || visible.length < 2) return;
+  const index = visible.findIndex((t) => t.id === current.id);
+  const next = visible[(index + 1) % visible.length];
+  if (current.status === "IN_PROGRESS") current.status = "PENDING";
+  next.status = "IN_PROGRESS";
+  state.focusedId = next.id;
+  openUnstuck();
+  render();
+}
+
+document.querySelector(".dial-row").addEventListener("click", (event) => {
+  const btn = event.target.closest("[data-energy]");
+  if (!btn) return;
+  state.energy = btn.dataset.energy;
+  const still = focusedTask();
+  state.focusedId = still?.id ?? null;
+  render();
+});
+
+document.getElementById("board").addEventListener("click", (event) => {
+  const done = event.target.closest("[data-done]");
+  const hold = event.target.closest("[data-hold]");
+  const anchor = event.target.closest("[data-anchor]");
+  const card = event.target.closest("[data-task]");
+  if (done) {
+    completeTask(Number(done.dataset.done));
+    return;
+  }
+  if (hold) {
+    holdTask(Number(hold.dataset.hold));
+    return;
+  }
+  if (anchor) {
+    const id = Number(anchor.dataset.anchor);
+    state.selectedAnchorId = state.selectedAnchorId === id ? null : id;
+    render();
+    return;
+  }
+  if (card) {
+    state.focusedId = Number(card.dataset.task);
+    render();
+  }
+});
+
+document.getElementById("unstuck-open").addEventListener("click", openUnstuck);
+document.getElementById("unstuck-dismiss").addEventListener("click", closeUnstuck);
+document.getElementById("break-smaller").addEventListener("click", breakSmaller);
+document.getElementById("swap-task").addEventListener("click", swapTask);
+document.getElementById("done-next").addEventListener("click", () => {
+  const task = focusedTask();
+  if (task) completeTask(task.id);
+});
+document.getElementById("ramp-dismiss").addEventListener("click", () => {
+  state.rampDismissed = true;
+  render();
+});
+
+render();
+
+  </script>
 </body>
 </html>

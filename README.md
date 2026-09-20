@@ -12,7 +12,11 @@ A static HTML mock of the timeline lives in `web-preview/` (energy dial, nested 
 
 **Live (GitHub Pages, after this branch is on `main`):** [https://cieranmcclung.github.io/anchor/](https://cieranmcclung.github.io/anchor/)
 
-Pages is already enabled on this repo (`build_type: workflow`, HTTPS). The `github-pages` environment only deploys from `main`, so the mock goes live when this PR merges. Until then, open `web-preview/index.html` locally, or use the commit CDN link noted on the PR.
+Pages is already enabled (`build_type: workflow`, HTTPS). The `github-pages` environment only deploys from `main`, so the mock goes live when this PR merges — no extra Pages toggle.
+
+**Until merge**, a public HTML preview of the same file:
+
+https://htmlpreview.github.io/?https://github.com/CieranMcClung/anchor/blob/cursor/anchor-float-android-ee6a/web-preview/index.html
 
 ```bash
 python3 -m http.server 4173 --directory web-preview
