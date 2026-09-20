@@ -1,8 +1,17 @@
 {
   "_meta": {
     "phase": "P1",
-    "voice": "adult, calm, zero-shame",
-    "banned": ["plasma", "dopamine", "streak", "score", "badge", "reward"]
+    "voice": "adult, calm, matter-of-fact",
+    "banned": [
+      "diagnose AuDHD",
+      "med dose/timing/optimisation",
+      "wait for Peak/coverage",
+      "plasma/efficacy claims",
+      "dopamine tank/refill",
+      "shame/guilt",
+      "hard interrupt as clinical hygiene"
+    ],
+    "pass": "dump → clusters → atomic next steps only"
   },
   "hud.tooHard": "Too Hard",
   "hud.tooHard.hint": "We’ll go smaller. No judgement.",
@@ -36,9 +45,10 @@
   "hotkeys.title": "Keyboard",
   "hotkeys.body": "c or / capture · Space start/pause · d done · u Un-Stick · h Too Hard · o Overwhelmed · s Swap · r Rest",
   "aiBrainDump.label": "Brain-dump deconstruction",
-  "aiBrainDump.hint": "On by default. Local sorting always works offline — no network. Optional enhance uses a key you paste below; stored only on this device. If the key is missing or the request fails, local sorting continues quietly.",
-  "aiBrainDump.reviewTitle": "Review pieces",
-  "aiBrainDump.review": "Edit or uncheck anything that isn’t a task. Commit the rest to today, or reject and keep the dump in Park.",
+  "aiBrainDump.hint": "On by default. Local sorting always works offline — dump to clusters to small next steps. Optional enhance uses a key you paste below; stored only on this device. If the key is missing or the request fails, local sorting continues quietly. Scaffolding only — not clinical advice.",
+  "aiBrainDump.reviewTitle": "Next steps",
+  "aiBrainDump.review": "Dump → clusters → small next steps. Edit or uncheck, then commit to today, or reject and keep the dump in Park.",
+  "aiBrainDump.placeholder": "A dump — walls, bullets, mess. We’ll cluster it into small next steps.",
   "aiBrainDump.offline": "Offline — using local sorting. That’s enough.",
   "aiBrainDump.noise": "Maybe filler",
   "aiBrainDump.deconstruct": "Deconstruct",

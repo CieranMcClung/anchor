@@ -159,7 +159,7 @@ export function ThoughtCapture({
               className={ui.textarea}
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="A thought, a list, a wall of text — all fine"
+              placeholder={t('aiBrainDump.placeholder')}
               autoFocus
               disabled={sorting}
             />

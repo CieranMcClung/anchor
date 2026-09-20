@@ -74,6 +74,7 @@ Capture FAB or `c` / `/` → paste a wall or bullets → **Deconstruct**.
 2. **Review sheet:** edit, uncheck, then **Commit selected to today** or **Reject — keep dump in Park**.
 3. Reject / empty / fail → the raw dump stays in Park. Nothing is scored.
 4. **Optional LLM enhance:** Settings stores an OpenAI-compatible key in `localStorage` key `keel-llm-v1` only. Missing key, offline, CORS, or any request failure → silent local fallback. **Never** put Cursor or server secrets in the SPA bundle. GitHub Pages has no proxy; many vendors block browser CORS, so local sorting is the offline-safe path.
+5. **Research lock:** PASS is dump → clusters → atomic next steps only. FAIL (hard reject in product copy and the optional LLM system prompt): diagnose AuDHD; med dose/timing/optimisation; wait for Peak/coverage; plasma/efficacy claims; dopamine tank/refill; shame/guilt; hard interrupt as clinical hygiene. Scaffolding only, not clinical advice. PK zones are a user-modelled map, not drug levels.
 
 Toggle the UI in Settings if you want capture to stay “park as written” only.
 
@@ -129,7 +130,7 @@ src/
   utils/pk.ts             zone engine (settings-aware)
   utils/duration.ts       buffer 30–50% (default 40%), nearest 5 min
   utils/routingHints.ts   A1 zone+load chips (never force)
-  utils/aiBrainDump.ts    B1 local heuristic (offline)
+  utils/researchGuardrails.ts B1 FAIL/PASS lock (copy + LLM prompt)
   utils/llmEnhance.ts     optional user-key enhance; silent local fallback
   utils/llmKey.ts         API key in localStorage only (`keel-llm-v1`)
   utils/restBury.ts       Item 7 park-and-rest (no minutes wait)
@@ -141,4 +142,4 @@ Stack: Vite + React + TypeScript, CSS modules, design tokens from P0 UX (`#12141
 
 ## Copy & design
 
-UI strings come from `src/copy/strings.p0.json` and `src/copy/strings.p1.json`. Tokens match `P0_DESIGN` hex values. No light theme, no streak counters, no guilt chrome. Daily Anchors is still the noun for today’s list. Research bans: no medication optimisation, no dopamine tanks, no plasma-as-product language outside the disclaimer that names what this is not.
+UI strings come from `src/copy/strings.p0.json` and `src/copy/strings.p1.json`. Tokens match `P0_DESIGN` hex values. No light theme, no streak counters, no guilt chrome. Daily Anchors is still the noun for today’s list. Research FAIL list is locked in `src/utils/researchGuardrails.ts` (copy tests + optional LLM prompt). The meds disclaimer may name what this is **not**; B1 never uses those frames as advice.

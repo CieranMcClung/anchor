@@ -127,7 +127,7 @@ describe('optional LLM parser', () => {
     expect(ok?.[0]?.text).toBe('Tidy desk');
     expect(
       parseLlmTasks(
-        '{"tasks":[{"text":"Refill the dopamine tank","estimateMinutes":5,"load":"low"}]}',
+        '{"tasks":[{"text":"Wait for Peak then tidy","estimateMinutes":5,"load":"low"}]}',
         BUF
       )
     ).toBeNull();

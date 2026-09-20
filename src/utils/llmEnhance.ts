@@ -6,19 +6,9 @@
 import type { AtomicTask } from './aiBrainDump';
 import { deconstructLocal, inferLoad, isOffline, toAtomicTask } from './aiBrainDump';
 import { hasLlmKey, loadLlmSettings } from './llmKey';
+import { LLM_SYSTEM_PROMPT, llmOutputIsBanned } from './researchGuardrails';
 
 const TIMEOUT_MS = 8000;
-const BANNED =
-  /\b(dopamine(?:\s+tank)?|streaks?|plasma|optimis(?:e|ation)|optimiz(?:e|ation)\s+of\s+(?:your\s+)?med)/i;
-
-const SYSTEM = `You deconstruct a chaotic brain dump into atomic tasks for an adult AuDHD user.
-Rules:
-- Each task estimateMinutes is an integer 1-9 (before any time buffer).
-- load is exactly low, medium, or high.
-- Drop filler. If unsure, omit the line.
-- Optional dependsOn is a 0-based index of another task in this list.
-- No medical advice, no medication optimisation, no plasma language, no dopamine tanks, no streaks or scores.
-- Return JSON only: {"tasks":[{"text":"string","estimateMinutes":5,"load":"medium","dependsOn":0}]}`;
 
 interface LlmTask {
   text?: unknown;
@@ -44,7 +34,7 @@ export function parseLlmTasks(
   bufferPercent: number
 ): AtomicTask[] | null {
   try {
-    if (BANNED.test(content)) return null;
+    if (llmOutputIsBanned(content)) return null;
     const parsed = extractJson(content) as { tasks?: unknown };
     if (!Array.isArray(parsed.tasks) || parsed.tasks.length === 0) return null;
     const tasks: AtomicTask[] = [];
@@ -52,7 +42,7 @@ export function parseLlmTasks(
       if (!raw || typeof raw.text !== 'string') continue;
       const text = raw.text.trim();
       if (text.length < 2) continue;
-      if (BANNED.test(text)) continue;
+      if (llmOutputIsBanned(text)) continue;
       const load =
         raw.load === 'low' || raw.load === 'medium' || raw.load === 'high'
           ? raw.load
@@ -108,7 +98,7 @@ export async function enhanceBrainDump(
         model: llm.model,
         temperature: 0.2,
         messages: [
-          { role: 'system', content: SYSTEM },
+          { role: 'system', content: LLM_SYSTEM_PROMPT },
           { role: 'user', content: raw.trim() },
         ],
       }),
