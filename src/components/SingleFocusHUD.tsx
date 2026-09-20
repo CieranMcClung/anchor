@@ -4,6 +4,8 @@ import { formatMmSs } from '../utils/time';
 import ui from './ui.module.css';
 import styles from './SingleFocusHUD.module.css';
 
+/** One card, one task. Timer is a soft buffer — hyperfocus is never force-cut. */
+
 interface Props {
   session: FocusSession;
   elapsedMs: number;

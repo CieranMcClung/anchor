@@ -2,7 +2,7 @@
 
 Calm, local-first P0 for adult AuDHD on **Methylphenidate XL 18 mg**. Bridge intent → execution. Zero shame. No streaks, no overdue chrome, no red warnings.
 
-**Not medical advice.** Onset / Peak / Comedown are **focus-energy scaffolding** — a product timing model, not a plasma prediction. See `disclaimer.pkZones`.
+**Not medical advice.** Onset / Peak / Comedown are a **product timing model** for organising today — not a plasma prediction, not a diagnosis, and not a dopamine tank. See `disclaimer.pkZones`.
 
 **Live:** https://cieranmcclung.github.io/anchor/
 
@@ -38,24 +38,31 @@ npm run preview
 |---|---|
 | **A** | Today only. Load Low / Med / High (soft caps 1 / 2 / 3). Durations = raw × 1.4, nearest 5 min. |
 | **B** | One XL 18 mg dose-time per day. Missing dose → zone **Unknown**; app stays usable. |
-| **C** | Single Focus HUD: begin / pause / done, Un-Stick, Not This / Swap. |
-| **D** | Thought-capture FAB → Park. Rest Protection Mode, user enter/exit only. |
+| **C** | Single Focus HUD: begin / pause / done, Un-Stick, Not This / Swap. Timer never force-cuts hyperfocus. |
+| **D** | Thought-capture FAB → Park (capture-on-interrupt). Rest Protection Mode, user enter/exit only. |
 
 Persistence (`localStorage` key `anchor-p0-v1`): load, dose-time, PK window overrides, anchors, active focus, park, rest flag. Settings survive day rollover.
 
-### PK windows (Research + QA locked defaults)
+### Architecture priors (behaviour, not extra modules)
 
-User-editable in **Meds → Timing windows**. Stored local-first under `settings`.
+- **Monotropism** — one thing at a time, interest-led capture, high interrupt cost, soft exits
+- **Transition friction** — +40% buffers, pause / Not This, park instead of derailing
+- **Sensory fatigue** — muted slate/graphite, no urgency chrome, Rest is voluntary
+- **ADHD motivation** — delay aversion / interest timing. No deficiency-tank or refill gamification
 
-| Setting | Default | Meaning |
+### PK windows (Concerta/OROS-class placeholders)
+
+User-editable in **Meds → Timing windows**. Product modelling only. UK “XL” is not one curve (Medikinet / Equasym often ~8 h). Comedown is highly individual.
+
+| Setting | Default | Placeholder map |
 |---|---|---|
-| `onsetEndHours` | **2** | Onset ~0–2h after dose log. Climbing 2–6h may still read as Onset. |
-| `peakEndHours` | **10** | Peak chip/label ~6h through 10h. |
-| `comedownEndHours` | **12** | Soft cue after Peak (starts ~10h). **Not** a hard 8h cutoff and not an alarm. |
+| `onsetEndHours` | **2** | Rising / Onset ~0–2h |
+| `peakEndHours` | **6** | Peak ~2–6h (through modelled Tmax window) |
+| `comedownEndHours` | **10** | Taper / Comedown ~6–10h, then Settled (Trough 10h+) |
 
-**Banned live defaults:** `onsetEndHours: 1`, `peakEndHours: 5`, `comedownEndHours: 8`. Those values are migrated to the locked defaults.
+Soft cue ~45 minutes before taper → trough. Never an alarm. Superseded placeholders (`1/5/8` and `2/10/12`) migrate to these defaults.
 
-Visible timeline labels: **Onset | Peak | Comedown** only.
+Visible bar labels: **Onset | Peak | Comedown** only.
 
 ## Architecture
 

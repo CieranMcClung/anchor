@@ -27,12 +27,12 @@ export function EfficacyTimeline({ pk }: Props) {
       <p className={ui.label}>{zoneLabel(pk.zone)}</p>
       {!pk.isUnknown ? <p className={ui.meta}>{zoneCue(pk.zone)}</p> : null}
       <div
-        className={`${styles.bar} ${pk.isUnknown ? styles.unknown : ''}`}
+        className={`${styles.bar} ${pk.isUnknown ? styles.unknown : ''} ${pk.zone === 'trough' ? styles.trough : ''}`}
         role="img"
         aria-label={
           pk.isUnknown
             ? t('med.notLogged.title')
-            : `${zoneLabel(pk.zone)}. Focus-energy scaffolding, not a plasma prediction.`
+            : `${zoneLabel(pk.zone)}. Product timing model, not a plasma prediction.`
         }
       >
         {segs.map((seg) => {

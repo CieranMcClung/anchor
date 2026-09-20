@@ -9,7 +9,7 @@ import {
 } from '../types';
 import { todayKey } from './time';
 import { bufferedMinutes } from './duration';
-import { isBannedLegacyPkDefaults, normalizePkWindows } from './pk';
+import { isSupersededPkPlaceholder, normalizePkWindows } from './pk';
 
 const KEY = 'anchor-p0-v1';
 const LEGACY_KEYS = ['anchor-app-v1', 'anchor-state-v1', 'anchor-v1', 'anchor-app-state'];
@@ -72,12 +72,16 @@ function migrateSettings(raw: unknown): Settings {
         ? nested.comedownEndHours
         : undefined,
   });
-  if (isBannedLegacyPkDefaults({
-    onsetEndHours: typeof nested.onsetEndHours === 'number' ? nested.onsetEndHours : 1,
-    peakEndHours: typeof nested.peakEndHours === 'number' ? nested.peakEndHours : 5,
-    comedownEndHours:
-      typeof nested.comedownEndHours === 'number' ? nested.comedownEndHours : 8,
-  })) {
+  if (
+    isSupersededPkPlaceholder({
+      onsetEndHours:
+        typeof nested.onsetEndHours === 'number' ? nested.onsetEndHours : 1,
+      peakEndHours:
+        typeof nested.peakEndHours === 'number' ? nested.peakEndHours : 5,
+      comedownEndHours:
+        typeof nested.comedownEndHours === 'number' ? nested.comedownEndHours : 8,
+    })
+  ) {
     return { ...DEFAULT_SETTINGS };
   }
   if (

@@ -1,5 +1,6 @@
 export type Load = 'low' | 'medium' | 'high';
-export type PkZone = 'onset' | 'peak' | 'comedown' | 'unknown';
+/** Product modelling zones. Timeline chrome stays Onset | Peak | Comedown; Trough is a quiet after-state. */
+export type PkZone = 'onset' | 'peak' | 'comedown' | 'trough' | 'unknown';
 export type Route = 'today' | 'meds' | 'rest' | 'settings';
 export type AnchorStatus = 'open' | 'done';
 export type FocusRunState = 'ready' | 'running' | 'paused';
@@ -12,17 +13,17 @@ export const LOAD_CAPS: Record<Load, number> = {
 
 export const GRACE_MINUTES = 3;
 
-/** Research-locked Peak plateau start (hours post dose). Peak chip applies from here through peakEndHours. */
-export const PEAK_PLATEAU_START_HOURS = 6;
+/** Soft cue ~45 min before taper → trough. Never an alarm. */
+export const TROUGH_NUDGE_LEAD_HOURS = 0.75;
 
 /**
- * Product + Research + QA locked defaults.
- * Banned legacy live defaults: onset 1 / peak 5 / comedown 8.
+ * Concerta/OROS-class P0 placeholders (product modelling, not a plasma curve).
+ * Rising/Onset 0–2h · Peak 2–6h · Taper/Comedown 6–10h · Trough 10h+.
  */
 export const DEFAULT_PK_WINDOWS = {
   onsetEndHours: 2,
-  peakEndHours: 10,
-  comedownEndHours: 12,
+  peakEndHours: 6,
+  comedownEndHours: 10,
 } as const;
 
 export interface PkWindows {

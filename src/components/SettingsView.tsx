@@ -1,11 +1,6 @@
 import { useState } from 'react';
 import { t } from '../copy/t';
-import {
-  DEFAULT_PK_WINDOWS,
-  PEAK_PLATEAU_START_HOURS,
-  type Settings,
-} from '../types';
-import { peakStartHours } from '../utils/pk';
+import { DEFAULT_PK_WINDOWS, type Settings } from '../types';
 import ui from './ui.module.css';
 
 interface Props {
@@ -59,7 +54,6 @@ function HoursField({
 
 export function SettingsView({ settings, onChange, onBack }: Props) {
   const [draft, setDraft] = useState<Partial<Record<WindowKey, string>>>({});
-  const peakFrom = peakStartHours(settings);
 
   const commit = (field: WindowKey, n: number) => {
     onChange({ [field]: n });
@@ -70,8 +64,9 @@ export function SettingsView({ settings, onChange, onBack }: Props) {
       <div>
         <h1 className={ui.screenTitle}>Settings</h1>
         <p className={ui.cue}>
-          Timing windows are focus-energy scaffolding for Methylphenidate XL 18 mg —
-          not a plasma prediction. Visible labels: Onset, Peak, Comedown.
+          Placeholder windows for organising the day. Concerta/OROS-class 18 mg
+          modelling — not a plasma curve, not a diagnosis, and not an optimisation
+          of medication. Visible bar: Onset, Peak, Comedown.
         </p>
       </div>
 
@@ -86,29 +81,28 @@ export function SettingsView({ settings, onChange, onBack }: Props) {
         onCommit={commit}
       />
       <p className={ui.meta}>
-        Default {DEFAULT_PK_WINDOWS.onsetEndHours}h. Onset is ~0–
-        {DEFAULT_PK_WINDOWS.onsetEndHours}h after a dose log. Climbing toward Peak
-        may still read as Onset.
+        Default {DEFAULT_PK_WINDOWS.onsetEndHours}h. Rising / Onset placeholder
+        ~0–{DEFAULT_PK_WINDOWS.onsetEndHours}h.
       </p>
 
       <HoursField
         label="Peak ends (hours after dose)"
         field="peakEndHours"
         value={settings.peakEndHours}
-        min={3}
+        min={2}
         max={16}
         draft={draft}
         setDraft={setDraft}
         onCommit={commit}
       />
       <p className={ui.meta}>
-        Default {DEFAULT_PK_WINDOWS.peakEndHours}h. Peak chip applies from ~
-        {PEAK_PLATEAU_START_HOURS}h through this value (currently {peakFrom}–
-        {settings.peakEndHours}h).
+        Default {DEFAULT_PK_WINDOWS.peakEndHours}h. Peak placeholder ~2–
+        {DEFAULT_PK_WINDOWS.peakEndHours}h (through the modelled Tmax window —
+        still a product map, not a lab value).
       </p>
 
       <HoursField
-        label="Comedown (soft, hours after dose)"
+        label="Comedown ends (soft, hours after dose)"
         field="comedownEndHours"
         value={settings.comedownEndHours}
         min={settings.peakEndHours}
@@ -118,8 +112,10 @@ export function SettingsView({ settings, onChange, onBack }: Props) {
         onCommit={commit}
       />
       <p className={ui.meta}>
-        Soft cue after Peak (default {DEFAULT_PK_WINDOWS.comedownEndHours}h). Not a
-        hard cutoff and not an alarm.
+        Default {DEFAULT_PK_WINDOWS.comedownEndHours}h. Taper / Comedown
+        placeholder ~{DEFAULT_PK_WINDOWS.peakEndHours}–
+        {DEFAULT_PK_WINDOWS.comedownEndHours}h, then Settled. A quiet cue ~45
+        minutes before that fold — not an alarm. Highly individual.
       </p>
 
       <p className={ui.disclaimer}>{t('disclaimer.pkZones')}</p>
