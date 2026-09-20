@@ -1,48 +1,40 @@
 # Anchor
 
-A calm, local-first single-page app for AuDHD executive dysfunction: task initiation, visible time, and routines organised around a user-configured med window.
+Calm, local-first single-page app for AuDHD executive dysfunction: task initiation, visible time, and routines organised around a Methylphenidate XL planning window.
 
 **Not medical advice.** Med phases are personal estimates for organising tasks only.
+
+Live: https://cieranmcclung.github.io/anchor/
+
+## Features
+
+- **Daily anchors** — morning / evening basics templates with cognitive load (`low` | `medium` | `high`), guilt-free skip
+- **Dose sync** — one-tap “Took my dose”; onset (0–1h) → peak (1–5h) → comedown (5–8h) → offline; soft copy only
+- **Single focus** — one task, definition of done, timer = estimate × 1.4; Paralyzed / Stuck → 2-minute micro-step
+- **AuDHD helpers** — phase-aware next action, initiation helper, time remaining + elapsed + wall-clock end, energy match on comedown
+- **Parking lot** — capture intrusive tasks without derailing focus
+- **Settings / first-run** — usual dose time, XL label, window overrides, template toggles; disclaimer retained
 
 ## Run
 
 ```bash
-cd /workspace/anchor
 npm install
 npm run dev
 ```
-
-Then open the URL Vite prints (usually `http://localhost:5173`).
 
 ## Build
 
 ```bash
 npm run build
-```
-
-Preview production build:
-
-```bash
 npm run preview
 ```
 
-## Features
-
-- **Med window** — dose time + useful hours; Home shows Before / Rising / Peak / Waning / Offline with soft copy
-- **Start Door** — capture a stuck task, editable 2-minute micro-start, Just start → focus timer
-- **Focus** — large remaining time, progress ring, elapsed, wall-clock end; Continue / Park / Done
-- **Body-double** — quiet presence; optional soft ambient (off by default)
-- **Today’s rails** — 3–7 daily anchors with guilt-free skip; suggested next from clock + med phase
-- **Parking lot** — capture intrusive tasks; one-tap into Start Door
-- **Time check** — wall clock, since last check, until next block
-- **Soft close** — evening journal of what started, park for tomorrow, optional med notes (local)
-- **Settings** — med window, theme, low-stimulation, reduce motion, edit rails
-- **First-run** — dose time + seeded default rail
+Vite `base` is `/anchor/` for GitHub Pages.
 
 ## Persistence
 
-All state lives in `localStorage` (`anchor-app-v1`). No backend, no accounts.
+`localStorage` key `anchor-app-v1` (legacy keys migrated). No backend.
 
 ## Stack
 
-Vite + React + TypeScript, CSS modules, dark default.
+Vite + React + TypeScript, CSS modules, dark slate default.

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { FocusSession } from '../types';
 import { useAmbient } from '../hooks/useAmbient';
 import { useClock } from '../hooks/useClock';
+import { paralyzedMicroStep } from '../utils/microStart';
 import { formatDuration, formatWallClock } from '../utils/time';
 import { ProgressRing } from './ProgressRing';
 import styles from './FocusView.module.css';
@@ -14,7 +15,12 @@ interface Props {
   onDone: () => void;
   onFinished: () => void;
   onOpenParking: () => void;
+  /** Replace step with a 2-min micro and restart timer. */
+  onParalyzed: (microStep: string) => void;
+  onToggleBodyDouble?: () => void;
 }
+
+const STUCK_AFTER_MS = 3 * 60 * 1000; // offer initiation helper after ~3 min idle-feeling
 
 export function FocusView({
   session,
@@ -23,9 +29,12 @@ export function FocusView({
   onDone,
   onFinished,
   onOpenParking,
+  onParalyzed,
+  onToggleBodyDouble,
 }: Props) {
   const now = useClock(250);
   const [finishedFired, setFinishedFired] = useState(false);
+  const [dismissedHelper, setDismissedHelper] = useState(false);
 
   useAmbient(session.bodyDouble && ambientEnabled);
 
@@ -39,12 +48,23 @@ export function FocusView({
     [session.endsAt]
   );
 
+  const showInitiationHelper =
+    !dismissedHelper &&
+    !session.isMicro &&
+    elapsed >= STUCK_AFTER_MS &&
+    remainingMs > 0;
+
   useEffect(() => {
     if (remainingMs <= 0 && !finishedFired) {
       setFinishedFired(true);
       onFinished();
     }
   }, [remainingMs, finishedFired, onFinished]);
+
+  const handleParalyzed = () => {
+    const micro = paralyzedMicroStep(session.task, session.definitionOfDone);
+    onParalyzed(micro);
+  };
 
   return (
     <div className={ui.screenFocus}>
@@ -65,6 +85,12 @@ export function FocusView({
       <p className={styles.task}>{session.task}</p>
       <p className={styles.micro}>{session.microStep}</p>
 
+      {session.definitionOfDone && (
+        <p className={styles.dod}>
+          Done when: {session.definitionOfDone}
+        </p>
+      )}
+
       <ProgressRing progress={progress}>
         <p className={styles.timeBig}>{formatDuration(remainingMs / 1000)}</p>
         <p className={styles.meta}>remaining</p>
@@ -72,6 +98,13 @@ export function FocusView({
 
       <p className={styles.meta} style={{ textAlign: 'center', marginTop: '0.85rem' }}>
         Elapsed {formatDuration(elapsed / 1000)} · ends {endLabel}
+        {session.estimateMinutes !== session.durationMinutes && (
+          <>
+            <br />
+            Estimate {session.estimateMinutes} min · buffered{' '}
+            {session.durationMinutes} min (+40%)
+          </>
+        )}
       </p>
 
       {session.bodyDouble && (
@@ -81,7 +114,51 @@ export function FocusView({
         </p>
       )}
 
+      {showInitiationHelper && (
+        <div className={styles.helper}>
+          <p className={styles.helperTitle}>Still finding the start?</p>
+          <p className={styles.helperText}>
+            No shame — shrink it to two minutes, or keep quiet company.
+          </p>
+          <div className={styles.helperActions}>
+            <button
+              type="button"
+              className={`${ui.btn} ${ui.btnPrimary}`}
+              onClick={handleParalyzed}
+            >
+              2-min micro-step
+            </button>
+            {onToggleBodyDouble && !session.bodyDouble && (
+              <button
+                type="button"
+                className={`${ui.btn} ${ui.btnSecondary}`}
+                onClick={onToggleBodyDouble}
+              >
+                Quiet body-double
+              </button>
+            )}
+            <button
+              type="button"
+              className={`${ui.btn} ${ui.btnGhost}`}
+              onClick={() => setDismissedHelper(true)}
+            >
+              I’m okay
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className={styles.footer}>
+        <button
+          type="button"
+          className={`${ui.btn} ${ui.btnSecondary} ${styles.stuck}`}
+          onClick={handleParalyzed}
+        >
+          Paralyzed / Stuck
+        </button>
+        <p className={ui.hint} style={{ textAlign: 'center', margin: 0 }}>
+          Swaps in a 2-minute micro-step — no guilt.
+        </p>
         <div className={styles.sideActions}>
           <button type="button" className={`${ui.btn} ${ui.btnSecondary}`} onClick={onPark}>
             Park it

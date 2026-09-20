@@ -3,12 +3,20 @@ import ui from './ui.module.css';
 interface Props {
   task: string;
   microStep: string;
-  onContinue: (minutes: number) => void;
+  definitionOfDone?: string;
+  onContinue: (estimateMinutes: number) => void;
   onPark: () => void;
   onDone: () => void;
 }
 
-export function FocusDone({ task, microStep, onContinue, onPark, onDone }: Props) {
+export function FocusDone({
+  task,
+  microStep,
+  definitionOfDone,
+  onContinue,
+  onPark,
+  onDone,
+}: Props) {
   return (
     <div className={ui.screen}>
       <header className={ui.header}>
@@ -20,8 +28,13 @@ export function FocusDone({ task, microStep, onContinue, onPark, onDone }: Props
 
       <div className={`${ui.card} ${ui.stack}`}>
         <div>
-          <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem' }}>{task}</p>
+          <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+            {task}
+          </p>
           <p style={{ margin: '0.35rem 0 0', fontWeight: 650 }}>{microStep}</p>
+          {definitionOfDone && (
+            <p className={ui.hint}>Done when: {definitionOfDone}</p>
+          )}
         </div>
 
         <button
@@ -29,7 +42,7 @@ export function FocusDone({ task, microStep, onContinue, onPark, onDone }: Props
           className={`${ui.btn} ${ui.btnPrimary}`}
           onClick={() => onContinue(5)}
         >
-          Continue (+5 min)
+          Continue (+5 min estimate)
         </button>
         <button
           type="button"

@@ -1,57 +1,80 @@
-import type { MedPhase } from '../types';
-import { hhmmToMinutes, minutesSinceMidnight } from './time';
+import type { CognitiveLoad, DoseLog, MedPhase, Settings } from '../types';
+import { hhmmToMinutes, minutesSinceMidnight, todayKey } from './time';
 
-/**
- * Estimate med phase from configured dose time and useful window.
- * Not medical advice — personal estimates only.
- *
- * Rising: 0–20% of window
- * Peak: 20–70%
- * Waning: 70–100%
- * Offline: after window
- * Before: before dose
- */
-export function getMedPhase(
-  doseTime: string,
-  usefulWindowHours: number,
+export interface DoseContext {
+  doseHHMM: string;
+  isEstimate: boolean;
+  elapsedHours: number;
+  phase: MedPhase;
+}
+
+export function getDoseContext(
+  settings: Settings,
+  doseLog: DoseLog,
   now = new Date()
+): DoseContext {
+  const today = todayKey(now);
+  const logged =
+    doseLog.date === today && doseLog.timeHHMM ? doseLog.timeHHMM : null;
+  const isEstimate = !logged;
+  const doseHHMM = logged ?? settings.doseTime;
+  const elapsedHours =
+    (minutesSinceMidnight(now) - hhmmToMinutes(doseHHMM)) / 60;
+  return {
+    doseHHMM,
+    isEstimate,
+    elapsedHours,
+    phase: phaseFromElapsed(elapsedHours, settings),
+  };
+}
+
+export function phaseFromElapsed(
+  elapsedHours: number,
+  settings: Pick<Settings, 'onsetEndHours' | 'peakEndHours' | 'comedownEndHours'>
 ): MedPhase {
-  const nowMins = minutesSinceMidnight(now);
-  const doseMins = hhmmToMinutes(doseTime);
-  const windowMins = Math.max(1, usefulWindowHours) * 60;
+  if (elapsedHours < 0) return 'before';
+  if (elapsedHours < settings.onsetEndHours) return 'onset';
+  if (elapsedHours < settings.peakEndHours) return 'peak';
+  if (elapsedHours < settings.comedownEndHours) return 'comedown';
+  return 'offline';
+}
 
-  if (nowMins < doseMins) return 'before';
+export function preferredLoads(phase: MedPhase): CognitiveLoad[] {
+  switch (phase) {
+    case 'before':
+    case 'onset':
+      return ['low'];
+    case 'peak':
+      return ['high', 'medium', 'low'];
+    case 'comedown':
+      return ['low', 'medium'];
+    case 'offline':
+      return ['low'];
+  }
+}
 
-  const elapsed = nowMins - doseMins;
-  if (elapsed >= windowMins) return 'offline';
-
-  const pct = elapsed / windowMins;
-  if (pct < 0.2) return 'rising';
-  if (pct < 0.7) return 'peak';
-  return 'waning';
+export function isLoadDeemphasised(
+  phase: MedPhase,
+  load: CognitiveLoad
+): boolean {
+  if (load !== 'high') return false;
+  return (
+    phase === 'comedown' ||
+    phase === 'offline' ||
+    phase === 'before' ||
+    phase === 'onset'
+  );
 }
 
 export function phaseProgress(
-  doseTime: string,
-  usefulWindowHours: number,
+  settings: Settings,
+  doseLog: DoseLog,
   now = new Date()
 ): number {
-  const nowMins = minutesSinceMidnight(now);
-  const doseMins = hhmmToMinutes(doseTime);
-  const windowMins = Math.max(1, usefulWindowHours) * 60;
-
-  if (nowMins < doseMins) {
-    // progress toward dose within morning (from midnight)
-    return Math.min(1, nowMins / Math.max(1, doseMins));
+  const ctx = getDoseContext(settings, doseLog, now);
+  if (ctx.elapsedHours < 0) {
+    const doseMins = hhmmToMinutes(ctx.doseHHMM);
+    return Math.min(1, minutesSinceMidnight(now) / Math.max(1, doseMins));
   }
-  const elapsed = nowMins - doseMins;
-  return Math.min(1, elapsed / windowMins);
-}
-
-export function phaseMatchesPreferred(
-  current: MedPhase,
-  preferred?: MedPhase
-): boolean {
-  if (!preferred) return true;
-  return current === preferred;
+  return Math.min(1, ctx.elapsedHours / Math.max(0.5, settings.comedownEndHours));
 }

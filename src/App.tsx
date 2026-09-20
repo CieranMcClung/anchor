@@ -10,17 +10,32 @@ import { SoftClose } from './components/SoftClose';
 import { StartDoor } from './components/StartDoor';
 import { TimeCheck } from './components/TimeCheck';
 import { TodaysRails } from './components/TodaysRails';
+import ui from './components/ui.module.css';
 import { useClock } from './hooks/useClock';
 import { usePersistedState } from './hooks/usePersistedState';
 import type { AnchorBlock, FocusSession, JournalEntry, View } from './types';
-import { defaultRailBlocks } from './utils/defaults';
-import { todayKey } from './utils/time';
-import ui from './components/ui.module.css';
+import { bufferedMinutes } from './types';
+import {
+  buildRailsFromSettings,
+  defaultRailBlocks,
+} from './utils/defaults';
+import { formatWallClock, todayKey } from './utils/time';
 
 function initialView(focus: FocusSession | null): View {
   if (!focus) return 'home';
   if (Date.now() >= focus.endsAt) return 'focus-done';
   return 'focus';
+}
+
+function loadFocusQuick(): FocusSession | null {
+  try {
+    const raw = localStorage.getItem('anchor-app-v1');
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { focus: FocusSession | null };
+    return parsed.focus ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export default function App() {
@@ -30,7 +45,6 @@ export default function App() {
   const [startDoorSeed, setStartDoorSeed] = useState('');
   const [parkingReturn, setParkingReturn] = useState<View>('home');
 
-  // Apply theme / accessibility attributes
   useEffect(() => {
     const root = document.documentElement;
     root.dataset.theme = state.settings.theme;
@@ -42,7 +56,6 @@ export default function App() {
     state.settings.reduceMotion,
   ]);
 
-  // Day rollover while app is open
   useEffect(() => {
     const today = todayKey(now);
     if (state.rails.date !== today) {
@@ -57,10 +70,16 @@ export default function App() {
         },
         startedToday: [],
         focus: null,
+        doseLog: { date: today, timeHHMM: null, loggedAt: null },
       }));
       setView('home');
+    } else if (state.doseLog.date !== today) {
+      update((prev) => ({
+        ...prev,
+        doseLog: { date: today, timeHHMM: null, loggedAt: null },
+      }));
     }
-  }, [now, state.rails.date, update]);
+  }, [now, state.rails.date, state.doseLog.date, update]);
 
   const hideNav =
     view === 'focus' ||
@@ -74,16 +93,27 @@ export default function App() {
   };
 
   const beginFocus = useCallback(
-    (task: string, microStep: string, minutes: number, bodyDouble: boolean) => {
+    (
+      task: string,
+      microStep: string,
+      definitionOfDone: string,
+      estimateMinutes: number,
+      bodyDouble: boolean,
+      isMicro = false
+    ) => {
       const startedAt = Date.now();
+      const duration = isMicro ? 2 : bufferedMinutes(estimateMinutes);
       const session: FocusSession = {
         task,
         microStep,
-        durationMinutes: minutes,
+        definitionOfDone,
+        estimateMinutes: isMicro ? 2 : estimateMinutes,
+        durationMinutes: duration,
         startedAt,
-        endsAt: startedAt + minutes * 60000,
+        endsAt: startedAt + duration * 60000,
         bodyDouble,
         elapsedBeforePause: 0,
+        isMicro,
       };
       update((prev) => ({
         ...prev,
@@ -97,9 +127,7 @@ export default function App() {
     [update]
   );
 
-  const clearFocus = () => {
-    update((prev) => ({ ...prev, focus: null }));
-  };
+  const clearFocus = () => update((prev) => ({ ...prev, focus: null }));
 
   const parkTask = (text: string) => {
     update((prev) => ({
@@ -109,6 +137,18 @@ export default function App() {
         ...prev.parking,
       ],
       focus: null,
+    }));
+  };
+
+  const onTookDose = () => {
+    const today = todayKey();
+    update((prev) => ({
+      ...prev,
+      doseLog: {
+        date: today,
+        timeHHMM: formatWallClock(new Date()),
+        loggedAt: Date.now(),
+      },
     }));
   };
 
@@ -122,10 +162,14 @@ export default function App() {
             settings,
             rails: {
               date: todayKey(),
-              blocks:
-                prev.rails.blocks.length >= 3
-                  ? prev.rails.blocks
-                  : defaultRailBlocks(),
+              blocks: buildRailsFromSettings({
+                useMorning: settings.useMorningTemplate,
+                useEvening: settings.useEveningTemplate,
+                existing:
+                  prev.rails.blocks.length >= 3
+                    ? prev.rails.blocks
+                    : defaultRailBlocks(),
+              }),
             },
           }));
           setView('home');
@@ -154,6 +198,29 @@ export default function App() {
           setParkingReturn('focus');
           setView('parking');
         }}
+        onParalyzed={(microStep) => {
+          beginFocus(
+            activeFocus.task,
+            microStep,
+            activeFocus.definitionOfDone,
+            2,
+            activeFocus.bodyDouble,
+            true
+          );
+        }}
+        onToggleBodyDouble={() =>
+          update((prev) =>
+            prev.focus
+              ? {
+                  ...prev,
+                  focus: {
+                    ...prev.focus,
+                    bodyDouble: !prev.focus.bodyDouble,
+                  },
+                }
+              : prev
+          )
+        }
       />
     );
   }
@@ -163,11 +230,13 @@ export default function App() {
       <FocusDone
         task={activeFocus.task}
         microStep={activeFocus.microStep}
-        onContinue={(minutes) => {
+        definitionOfDone={activeFocus.definitionOfDone}
+        onContinue={(estimateMinutes) => {
           beginFocus(
             activeFocus.task,
             activeFocus.microStep,
-            minutes,
+            activeFocus.definitionOfDone,
+            estimateMinutes,
             activeFocus.bodyDouble
           );
         }}
@@ -294,8 +363,12 @@ export default function App() {
       <>
         <Settings
           settings={state.settings}
+          doseLog={state.doseLog}
           blocks={state.rails.blocks}
           onChange={(settings) => update((prev) => ({ ...prev, settings }))}
+          onDoseLogChange={(doseLog) =>
+            update((prev) => ({ ...prev, doseLog }))
+          }
           onBlocksChange={(blocks) =>
             update((prev) => ({
               ...prev,
@@ -315,7 +388,9 @@ export default function App() {
         <TimeCheck
           lastCheckAt={state.lastTimeCheckAt}
           blocks={state.rails.blocks}
+          parking={state.parking}
           settings={state.settings}
+          doseLog={state.doseLog}
           now={now}
           onCheck={() =>
             update((prev) => ({ ...prev, lastTimeCheckAt: Date.now() }))
@@ -327,8 +402,7 @@ export default function App() {
     );
   }
 
-  const hour = now.getHours();
-  const showSoftClosePrompt = hour >= 20;
+  const showSoftClosePrompt = now.getHours() >= 20;
 
   return (
     <>
@@ -336,12 +410,20 @@ export default function App() {
         <header className={ui.header}>
           <div>
             <h1 className={ui.title}>Anchor</h1>
-            <p className={ui.subtitle}>Start small. See time. Hold the day lightly.</p>
+            <p className={ui.subtitle}>
+              Start small. See time. Hold the day lightly.
+            </p>
           </div>
         </header>
 
         <div className={ui.stack}>
-          <MedWindow settings={state.settings} now={now} />
+          <MedWindow
+            settings={state.settings}
+            doseLog={state.doseLog}
+            now={now}
+            onTookDose={onTookDose}
+            onEditDoseTime={() => setView('settings')}
+          />
 
           {activeFocus && (
             <button
@@ -365,12 +447,14 @@ export default function App() {
               setView('start-door');
             }}
           >
-            Open Start Door
+            Single focus
           </button>
 
           <TodaysRails
             blocks={state.rails.blocks}
+            parking={state.parking}
             settings={state.settings}
+            doseLog={state.doseLog}
             now={now}
             onStatus={(id, status) =>
               update((prev) => ({
@@ -387,11 +471,18 @@ export default function App() {
               setStartDoorSeed(block.name);
               setView('start-door');
             }}
+            onStartParking={(text) => {
+              setStartDoorSeed(text);
+              setView('start-door');
+            }}
           />
 
           {state.parking.length > 0 && (
             <div className={ui.cardQuiet}>
-              <div className={ui.row} style={{ justifyContent: 'space-between' }}>
+              <div
+                className={ui.row}
+                style={{ justifyContent: 'space-between' }}
+              >
                 <strong>Parking lot</strong>
                 <button
                   type="button"
@@ -426,16 +517,4 @@ export default function App() {
       <Nav view={view} onNavigate={setView} hidden={hideNav} />
     </>
   );
-}
-
-/** Sync read for first paint resume — mirrors storage key. */
-function loadFocusQuick(): FocusSession | null {
-  try {
-    const raw = localStorage.getItem('anchor-app-v1');
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { focus: FocusSession | null };
-    return parsed.focus ?? null;
-  } catch {
-    return null;
-  }
 }

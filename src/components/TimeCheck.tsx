@@ -1,12 +1,20 @@
-import type { AnchorBlock, Settings } from '../types';
-import { formatElapsedFriendly, formatUntil, formatWallClock, hhmmToMinutes, dateAtHHMM } from '../utils/time';
-import { suggestNext } from './TodaysRails';
+import type { AnchorBlock, DoseLog, ParkingItem, Settings } from '../types';
+import { suggestNextAction } from '../utils/suggestNext';
+import {
+  dateAtHHMM,
+  formatElapsedFriendly,
+  formatUntil,
+  formatWallClock,
+  hhmmToMinutes,
+} from '../utils/time';
 import ui from './ui.module.css';
 
 interface Props {
   lastCheckAt: number | null;
   blocks: AnchorBlock[];
+  parking: ParkingItem[];
   settings: Settings;
+  doseLog: DoseLog;
   now: Date;
   onCheck: () => void;
   onBack: () => void;
@@ -15,23 +23,34 @@ interface Props {
 export function TimeCheck({
   lastCheckAt,
   blocks,
+  parking,
   settings,
+  doseLog,
   now,
   onCheck,
   onBack,
 }: Props) {
-  const next = suggestNext(blocks, settings, now);
-  const since = lastCheckAt ? formatElapsedFriendly(now.getTime() - lastCheckAt) : 'no check yet';
+  const next = suggestNextAction(blocks, parking, settings, doseLog, now);
+  const since = lastCheckAt
+    ? formatElapsedFriendly(now.getTime() - lastCheckAt)
+    : 'no check yet';
 
   let untilLabel = '—';
-  if (next) {
-    const nextAt = dateAtHHMM(next.plannedStart, now);
+  if (next?.kind === 'anchor') {
+    const block = next.block;
+    const nextAt = dateAtHHMM(block.plannedStart, now);
     const diff = nextAt.getTime() - now.getTime();
-    if (hhmmToMinutes(next.plannedStart) <= now.getHours() * 60 + now.getMinutes() && next.status === 'now') {
-      untilLabel = `${next.name} is now`;
+    if (
+      hhmmToMinutes(block.plannedStart) <=
+        now.getHours() * 60 + now.getMinutes() &&
+      block.status === 'now'
+    ) {
+      untilLabel = `${block.name} is now`;
     } else {
-      untilLabel = `${next.name} ${formatUntil(diff)} (${next.plannedStart})`;
+      untilLabel = `${block.name} ${formatUntil(diff)} (${block.plannedStart})`;
     }
+  } else if (next?.kind === 'parking') {
+    untilLabel = `Parked: ${next.item.text}`;
   }
 
   return (
@@ -60,12 +79,8 @@ export function TimeCheck({
           {formatWallClock(now)}
         </p>
         <p style={{ margin: 0 }}>Last check: {since}</p>
-        <p style={{ margin: 0 }}>Next planned: {untilLabel}</p>
-        <button
-          type="button"
-          className={`${ui.btn} ${ui.btnPrimary}`}
-          onClick={onCheck}
-        >
+        <p style={{ margin: 0 }}>Suggested next: {untilLabel}</p>
+        <button type="button" className={`${ui.btn} ${ui.btnPrimary}`} onClick={onCheck}>
           Check in now
         </button>
       </div>

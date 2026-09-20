@@ -31,6 +31,10 @@
   opacity: 0.45;
 }
 
+.itemDeemph {
+  opacity: 0.72;
+}
+
 .time {
   font-family: var(--font-mono);
   font-weight: 700;
@@ -51,9 +55,31 @@
 
 .actions {
   display: flex;
-  gap: 0.25rem;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+  justify-content: flex-end;
 }
 
 .suggest {
   margin-top: 0.35rem;
+}
+
+.groupTitle {
+  margin: 0.5rem 0 0.45rem;
+  font-size: 0.88rem;
+  font-weight: 650;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.loadLabel {
+  margin: 0.55rem 0 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.loadDeemph {
+  opacity: 0.78;
 }

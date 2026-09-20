@@ -1,11 +1,22 @@
-import type { AnchorBlock, MedPhase, Settings as SettingsType } from '../types';
-import { PHASE_COPY } from '../types';
+import type {
+  AnchorBlock,
+  CognitiveLoad,
+  DoseLog,
+  MedPhase,
+  RoutineSlot,
+  Settings as SettingsType,
+} from '../types';
+import { LOAD_COPY, PHASE_COPY } from '../types';
+import { buildRailsFromSettings } from '../utils/defaults';
+import { todayKey } from '../utils/time';
 import ui from './ui.module.css';
 
 interface Props {
   settings: SettingsType;
+  doseLog: DoseLog;
   blocks: AnchorBlock[];
   onChange: (next: SettingsType) => void;
+  onDoseLogChange: (next: DoseLog) => void;
   onBlocksChange: (blocks: AnchorBlock[]) => void;
   onBack: () => void;
 }
@@ -13,16 +24,21 @@ interface Props {
 const PHASE_OPTIONS: (MedPhase | '')[] = [
   '',
   'before',
-  'rising',
+  'onset',
   'peak',
-  'waning',
+  'comedown',
   'offline',
 ];
 
+const LOAD_OPTIONS: CognitiveLoad[] = ['low', 'medium', 'high'];
+const ROUTINE_OPTIONS: RoutineSlot[] = ['morning', 'evening', 'anytime'];
+
 export function Settings({
   settings,
+  doseLog,
   blocks,
   onChange,
+  onDoseLogChange,
   onBlocksChange,
   onBack,
 }: Props) {
@@ -34,7 +50,6 @@ export function Settings({
   };
 
   const addBlock = () => {
-    if (blocks.length >= 7) return;
     onBlocksChange([
       ...blocks,
       {
@@ -42,6 +57,8 @@ export function Settings({
         name: 'New anchor',
         plannedStart: '10:00',
         durationMinutes: 30,
+        cognitiveLoad: 'medium',
+        routine: 'anytime',
         status: 'upcoming',
       },
     ]);
@@ -51,6 +68,19 @@ export function Settings({
     if (blocks.length <= 3) return;
     onBlocksChange(blocks.filter((b) => b.id !== id));
   };
+
+  const reseedTemplates = (useMorning: boolean, useEvening: boolean) => {
+    const next = buildRailsFromSettings({
+      useMorning,
+      useEvening,
+      existing: blocks,
+    });
+    onBlocksChange(next);
+  };
+
+  const today = todayKey();
+  const todaysDose =
+    doseLog.date === today && doseLog.timeHHMM ? doseLog.timeHHMM : '';
 
   return (
     <div className={ui.screen}>
@@ -66,11 +96,23 @@ export function Settings({
 
       <div className={ui.stack}>
         <div className={`${ui.card} ${ui.stack}`}>
-          <h2 style={{ margin: 0, fontSize: '1rem' }}>Med window</h2>
+          <h2 style={{ margin: 0, fontSize: '1rem' }}>Methylphenidate XL</h2>
           <p className={ui.disclaimer}>
-            Not medical advice. These are your personal estimates of when medication
-            tends to help versus fade — for organising tasks only.
+            Not medical advice. These are your personal estimates of when focus
+            tends to rise and ease — for organising tasks only. Started 18 mg on
+            10 September 2026 is your context; Anchor does not interpret clinical
+            response.
           </p>
+          <div className={ui.field}>
+            <label htmlFor="dose-label">Dose label</label>
+            <input
+              id="dose-label"
+              className={ui.input}
+              value={settings.doseLabel}
+              onChange={(e) => patch({ doseLabel: e.target.value || '18 mg XL' })}
+              placeholder="18 mg XL"
+            />
+          </div>
           <div className={ui.field}>
             <label htmlFor="dose-time">Usual dose time</label>
             <input
@@ -80,24 +122,124 @@ export function Settings({
               value={settings.doseTime}
               onChange={(e) => patch({ doseTime: e.target.value || '08:00' })}
             />
+            <p className={ui.hint}>
+              Used as an estimate when today’s dose isn’t logged yet.
+            </p>
           </div>
           <div className={ui.field}>
-            <label htmlFor="window-hours">Useful window (hours)</label>
+            <label htmlFor="todays-dose">Today’s logged dose time</label>
             <input
-              id="window-hours"
+              id="todays-dose"
               className={ui.input}
-              type="number"
-              min={1}
-              max={16}
-              step={0.5}
-              value={settings.usefulWindowHours}
-              onChange={(e) =>
-                patch({
-                  usefulWindowHours: Math.min(16, Math.max(1, Number(e.target.value) || 9)),
-                })
-              }
+              type="time"
+              value={todaysDose}
+              onChange={(e) => {
+                const v = e.target.value;
+                onDoseLogChange({
+                  date: today,
+                  timeHHMM: v || null,
+                  loggedAt: v ? Date.now() : null,
+                });
+              }}
             />
+            <p className={ui.hint}>Clear the field to treat today as not logged.</p>
           </div>
+          <div className={ui.row}>
+            <div className={ui.field} style={{ flex: 1 }}>
+              <label htmlFor="onset-h">Onset ends (h)</label>
+              <input
+                id="onset-h"
+                className={ui.input}
+                type="number"
+                min={0.25}
+                max={4}
+                step={0.25}
+                value={settings.onsetEndHours}
+                onChange={(e) =>
+                  patch({
+                    onsetEndHours: Math.min(
+                      4,
+                      Math.max(0.25, Number(e.target.value) || 1)
+                    ),
+                  })
+                }
+              />
+            </div>
+            <div className={ui.field} style={{ flex: 1 }}>
+              <label htmlFor="peak-h">Peak ends (h)</label>
+              <input
+                id="peak-h"
+                className={ui.input}
+                type="number"
+                min={1}
+                max={12}
+                step={0.25}
+                value={settings.peakEndHours}
+                onChange={(e) =>
+                  patch({
+                    peakEndHours: Math.min(
+                      12,
+                      Math.max(1, Number(e.target.value) || 5)
+                    ),
+                  })
+                }
+              />
+            </div>
+            <div className={ui.field} style={{ flex: 1 }}>
+              <label htmlFor="come-h">Comedown ends (h)</label>
+              <input
+                id="come-h"
+                className={ui.input}
+                type="number"
+                min={2}
+                max={16}
+                step={0.25}
+                value={settings.comedownEndHours}
+                onChange={(e) =>
+                  patch({
+                    comedownEndHours: Math.min(
+                      16,
+                      Math.max(2, Number(e.target.value) || 8)
+                    ),
+                  })
+                }
+              />
+            </div>
+          </div>
+          <p className={ui.hint}>
+            Defaults: onset 0–1h · peak 1–5h · comedown 5–8h · then offline / rest.
+          </p>
+        </div>
+
+        <div className={`${ui.card} ${ui.stack}`}>
+          <h2 style={{ margin: 0, fontSize: '1rem' }}>Daily templates</h2>
+          <label className={ui.row} style={{ cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={settings.useMorningTemplate}
+              onChange={(e) => {
+                const useMorning = e.target.checked;
+                patch({ useMorningTemplate: useMorning });
+                reseedTemplates(useMorning, settings.useEveningTemplate);
+              }}
+            />
+            Morning basics (meds, breakfast, teeth, dressed, plan)
+          </label>
+          <label className={ui.row} style={{ cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={settings.useEveningTemplate}
+              onChange={(e) => {
+                const useEvening = e.target.checked;
+                patch({ useEveningTemplate: useEvening });
+                reseedTemplates(settings.useMorningTemplate, useEvening);
+              }}
+            />
+            Evening soft close (screens, tidy one, teeth, unwind)
+          </label>
+          <p className={ui.hint}>
+            Toggling reseeds morning/evening anchors; your “anytime” items are kept.
+          </p>
         </div>
 
         <div className={`${ui.card} ${ui.stack}`}>
@@ -138,12 +280,11 @@ export function Settings({
 
         <div className={`${ui.card} ${ui.stack}`}>
           <div className={ui.row} style={{ justifyContent: 'space-between' }}>
-            <h2 style={{ margin: 0, fontSize: '1rem' }}>Daily rails (3–7)</h2>
+            <h2 style={{ margin: 0, fontSize: '1rem' }}>Anchors</h2>
             <button
               type="button"
               className={`${ui.btn} ${ui.btnGhost}`}
               onClick={addBlock}
-              disabled={blocks.length >= 7}
             >
               Add
             </button>
@@ -166,7 +307,9 @@ export function Settings({
                     type="time"
                     value={b.plannedStart}
                     onChange={(e) =>
-                      updateBlock(b.id, { plannedStart: e.target.value || '09:00' })
+                      updateBlock(b.id, {
+                        plannedStart: e.target.value || '09:00',
+                      })
                     }
                   />
                 </div>
@@ -186,6 +329,44 @@ export function Settings({
                       })
                     }
                   />
+                </div>
+              </div>
+              <div className={ui.row}>
+                <div className={ui.field} style={{ flex: 1 }}>
+                  <label>Cognitive load</label>
+                  <select
+                    className={ui.select}
+                    value={b.cognitiveLoad}
+                    onChange={(e) =>
+                      updateBlock(b.id, {
+                        cognitiveLoad: e.target.value as CognitiveLoad,
+                      })
+                    }
+                  >
+                    {LOAD_OPTIONS.map((l) => (
+                      <option key={l} value={l}>
+                        {LOAD_COPY[l]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className={ui.field} style={{ flex: 1 }}>
+                  <label>Routine</label>
+                  <select
+                    className={ui.select}
+                    value={b.routine}
+                    onChange={(e) =>
+                      updateBlock(b.id, {
+                        routine: e.target.value as RoutineSlot,
+                      })
+                    }
+                  >
+                    {ROUTINE_OPTIONS.map((r) => (
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div className={ui.field}>
