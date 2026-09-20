@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="sage_green">#8A9A86</color>
+    <color name="slate_grey">#606C76</color>
+    <color name="soft_charcoal">#2B2D42</color>
+    <color name="muted_amber">#DDA15E</color>
+    <color name="dusty_rose">#BC6C25</color>
+    <color name="paper">#F3EEE4</color>
+    <color name="paper_elevated">#FAF6EE</color>
+    <color name="launcher_bg">#8A9A86</color>
+</resources>
