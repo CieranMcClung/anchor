@@ -1,0 +1,59 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 3.4rem 1fr auto;
+  gap: 0.65rem;
+  align-items: center;
+  padding: 0.75rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.itemNow {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.itemDone {
+  opacity: 0.55;
+}
+
+.itemSkipped {
+  opacity: 0.45;
+}
+
+.time {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.name {
+  margin: 0;
+  font-weight: 650;
+  font-size: 0.95rem;
+}
+
+.meta {
+  margin: 0.15rem 0 0;
+  font-size: 0.78rem;
+  color: var(--text-faint);
+}
+
+.actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.suggest {
+  margin-top: 0.35rem;
+}
