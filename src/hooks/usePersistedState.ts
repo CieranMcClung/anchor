@@ -19,9 +19,5 @@ export function usePersistedState() {
     setState(updater);
   }, []);
 
-  const patch = useCallback((partial: Partial<AppState>) => {
-    setState((prev) => ({ ...prev, ...partial }));
-  }, []);
-
-  return { state, setState, update, patch };
+  return { state, update };
 }
