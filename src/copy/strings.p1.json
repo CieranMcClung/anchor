@@ -1,8 +1,17 @@
 {
   "_meta": {
     "phase": "P1",
-    "voice": "adult, calm, zero-shame",
-    "banned": ["plasma", "dopamine", "streak", "score", "badge", "reward"]
+    "voice": "adult, calm, matter-of-fact",
+    "banned": [
+      "diagnose AuDHD",
+      "med dose/timing/optimisation",
+      "wait for Peak/coverage",
+      "plasma/efficacy claims",
+      "dopamine tank/refill",
+      "shame/guilt",
+      "hard interrupt as clinical hygiene"
+    ],
+    "pass": "dump → clusters → atomic next steps only"
   },
   "hud.tooHard": "Too Hard",
   "hud.tooHard.hint": "We’ll go smaller. No judgement.",
@@ -35,9 +44,32 @@
   "hyperfocus.setting.hint": "After this many continuous minutes. Dismissible. Never cuts focus.",
   "hotkeys.title": "Keyboard",
   "hotkeys.body": "c or / capture · Space start/pause · d done · u Un-Stick · h Too Hard · o Overwhelmed · s Swap · r Rest",
-  "aiBrainDump.label": "AI brain-dump",
-  "aiBrainDump.hint": "Off by default. Local stub only — no API. Review before saving. Offline parks the raw dump. Voice is later.",
-  "aiBrainDump.review": "Review pieces",
-  "aiBrainDump.offline": "Offline — parked as written.",
-  "aiBrainDump.noise": "Maybe noise"
+  "aiBrainDump.label": "Brain-dump deconstruction",
+  "aiBrainDump.hint": "On by default. Local sorting always works offline — dump to clusters to small next steps. Optional enhance uses a key you paste below; stored only on this device. If the key is missing or the request fails, local sorting continues quietly. Scaffolding only — not clinical advice.",
+  "aiBrainDump.reviewTitle": "Next steps",
+  "aiBrainDump.review": "Dump → clusters → small next steps. Edit or uncheck, then commit to today, or reject and keep the dump in Park.",
+  "aiBrainDump.placeholder": "A dump — walls, bullets, mess. We’ll cluster it into small next steps.",
+  "aiBrainDump.offline": "Offline — using local sorting. That’s enough.",
+  "aiBrainDump.noise": "Maybe filler",
+  "aiBrainDump.deconstruct": "Deconstruct",
+  "aiBrainDump.parkRaw": "Park as written",
+  "aiBrainDump.commit": "Commit selected to today",
+  "aiBrainDump.reject": "Reject — keep dump in Park",
+  "aiBrainDump.sorting": "Sorting it out…",
+  "aiBrainDump.llmKey": "Optional enhance key",
+  "aiBrainDump.llmKey.hint": "OpenAI-compatible. Stays in this browser only. Never a server or Cursor secret. Many APIs block browser calls — if so, local sorting still works.",
+  "aiBrainDump.llmBase": "API base URL",
+  "aiBrainDump.llmModel": "Model",
+  "aiBrainDump.llmClear": "Clear key from this device",
+  "aiBrainDump.committed": "On today. One at a time is plenty.",
+  "aiBrainDump.parkedRaw": "Parked as written. Nothing lost.",
+  "aiBrainDump.empty": "Nothing to split — parked as written.",
+  "aiBrainDump.after": "After",
+  "hyperfocus.preview": "Preview hyperfocus chip",
+  "hyperfocus.preview.hint": "QA: show the chip on the next focus without waiting 45–90 minutes. Dismissible. Never cuts focus.",
+  "restBury.cta": "Park what’s left and rest",
+  "restBury.hint": "Open bits go to Park. Come back when you want them.",
+  "restBury.done": "Parked what’s left. Rest is yours.",
+  "restBury.override": "Rest bury without waiting",
+  "restBury.override.hint": "QA / Item 7: allow Park-and-rest during Comedown or offline without waiting for window minutes. Timing windows themselves are unchanged."
 }

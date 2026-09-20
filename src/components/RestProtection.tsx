@@ -47,11 +47,19 @@ export function RestProtectionOverlay({ onStay, onLeave }: OverlayProps) {
 
 interface GateProps {
   onEnter: () => void;
+  onBury?: () => void;
+  canBury?: boolean;
   suggest?: boolean;
   onDismissSuggest?: () => void;
 }
 
-export function RestGate({ onEnter, suggest, onDismissSuggest }: GateProps) {
+export function RestGate({
+  onEnter,
+  onBury,
+  canBury,
+  suggest,
+  onDismissSuggest,
+}: GateProps) {
   return (
     <section className={ui.stack}>
       <div>
@@ -72,9 +80,21 @@ export function RestGate({ onEnter, suggest, onDismissSuggest }: GateProps) {
           ) : null}
         </div>
       ) : null}
+      {canBury && onBury ? (
+        <>
+          <button
+            type="button"
+            className={`${ui.btn} ${ui.btnLg} ${ui.btnPrimary}`}
+            onClick={onBury}
+          >
+            {t('restBury.cta')}
+          </button>
+          <p className={ui.meta}>{t('restBury.hint')}</p>
+        </>
+      ) : null}
       <button
         type="button"
-        className={`${ui.btn} ${ui.btnLg} ${ui.btnPrimary}`}
+        className={`${ui.btn} ${ui.btnLg} ${canBury ? ui.btnGhost : ui.btnPrimary}`}
         onClick={onEnter}
       >
         {t('restMode.enter.cta')}

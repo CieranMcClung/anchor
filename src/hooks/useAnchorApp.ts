@@ -18,7 +18,10 @@ import { useClock } from './useClock';
 import { usePersistedState } from './usePersistedState';
 import { seedAnchors } from '../utils/defaults';
 import { bufferedMinutes } from '../utils/duration';
+import type { AtomicTask } from '../utils/aiBrainDump';
+import { isOffline } from '../utils/aiBrainDump';
 import { getPkSnapshot, windowsFromSettings } from '../utils/pk';
+import { buryOpenWork, canRestBury, maxLoad } from '../utils/restBury';
 import { normalizeSettings, rollover } from '../utils/storage';
 import { formatWallClock, newId, todayKey } from '../utils/time';
 
@@ -338,6 +341,44 @@ export function useAnchorApp() {
     [update]
   );
 
+  const commitDumpToToday = useCallback(
+    (tasks: AtomicTask[], raw: string) => {
+      const keep = tasks.filter((task) => task.text.trim());
+      if (keep.length === 0) {
+        parkThought(raw);
+        showToast({ title: t('aiBrainDump.parkedRaw') });
+        return;
+      }
+      update((prev) => {
+        const load = prev.load ?? maxLoad(keep.map((task) => task.load));
+        const nextAnchors: Anchor[] = [...prev.anchors];
+        keep.forEach((task) => {
+          const dep =
+            task.dependsOn != null && task.dependsOn >= 0
+              ? keep[task.dependsOn]
+              : undefined;
+          nextAnchors.push({
+            id: newId(),
+            title: task.text.trim(),
+            dod: dep
+              ? `${t('aiBrainDump.after')}: ${dep.text}`
+              : 'It’s done when you say it is.',
+            rawMinutes: task.estimateMinutes,
+            bufferedMinutes: bufferedMinutes(
+              task.estimateMinutes,
+              prev.settings.bufferPercent
+            ),
+            load: task.load,
+            status: 'open',
+          });
+        });
+        return { ...prev, load, anchors: nextAnchors };
+      });
+      showToast({ title: t('aiBrainDump.committed') });
+    },
+    [parkThought, showToast, update]
+  );
+
   const startParkItem = useCallback(
     (item: ParkItem) => {
       if (state.restMode) return;
@@ -374,20 +415,43 @@ export function useAnchorApp() {
     [update]
   );
 
-  const enterRest = useCallback(() => {
-    const at = Date.now();
-    update((prev) => ({
-      ...prev,
-      restMode: true,
-      focus: prev.focus ? pauseFocus(prev.focus, at) : prev.focus,
-    }));
-    setRoute('rest');
-    setUnstickOpen(false);
-    setOverwhelmOpen(false);
-    setCaptureOpen(false);
-    setAddOpen(false);
-    showToast({ title: t('restMode.enter.confirm') });
-  }, [showToast, update]);
+  const enterRest = useCallback(
+    (opts?: { bury?: boolean }) => {
+      const bury = Boolean(opts?.bury);
+      const at = Date.now();
+      update((prev) => {
+        if (!bury) {
+          return {
+            ...prev,
+            restMode: true,
+            focus: prev.focus ? pauseFocus(prev.focus, at) : prev.focus,
+          };
+        }
+        const buried = buryOpenWork({
+          anchors: prev.anchors,
+          park: prev.park,
+          focus: prev.focus,
+          now: at,
+        });
+        return {
+          ...prev,
+          restMode: true,
+          anchors: buried.anchors,
+          park: buried.park,
+          focus: buried.focus,
+        };
+      });
+      setRoute('rest');
+      setUnstickOpen(false);
+      setOverwhelmOpen(false);
+      setCaptureOpen(false);
+      setAddOpen(false);
+      showToast({
+        title: bury ? t('restBury.done') : t('restMode.enter.confirm'),
+      });
+    },
+    [showToast, update]
+  );
 
   const exitRest = useCallback(() => {
     update((prev) => ({ ...prev, restMode: false }));
@@ -544,6 +608,12 @@ export function useAnchorApp() {
     (p) => todayKey(new Date(p.createdAt)) === state.date
   ).length;
 
+  const restBuryAvailable = canRestBury({
+    zone: pk.zone,
+    offline: isOffline(),
+    qaOverride: state.settings.qaRestBuryOverride,
+  });
+
   return {
     state,
     now,
@@ -567,6 +637,7 @@ export function useAnchorApp() {
     showComedownNudge,
     showRestSuggest,
     parkedToday,
+    restBuryAvailable,
     chooseLoad,
     skipLoad,
     logDose,
@@ -580,6 +651,7 @@ export function useAnchorApp() {
     completeFocus,
     addAnchor,
     parkThought,
+    commitDumpToToday,
     startParkItem,
     removePark,
     enterRest,

@@ -12,6 +12,14 @@ import {
   type Settings,
 } from '../types';
 import { bufferedMinutes } from '../utils/duration';
+import {
+  clearLlmSettings,
+  DEFAULT_LLM_BASE_URL,
+  DEFAULT_LLM_MODEL,
+  loadLlmSettings,
+  saveLlmSettings,
+  type LlmSettings,
+} from '../utils/llmKey';
 import ui from './ui.module.css';
 
 interface Props {
@@ -65,9 +73,14 @@ function HoursField({
 
 export function SettingsView({ settings, onChange, onBack }: Props) {
   const [draft, setDraft] = useState<Partial<Record<WindowKey, string>>>({});
+  const [llm, setLlm] = useState<LlmSettings>(() => loadLlmSettings());
 
   const commit = (field: WindowKey, n: number) => {
     onChange({ [field]: n });
+  };
+
+  const patchLlm = (partial: Partial<LlmSettings>) => {
+    setLlm(saveLlmSettings(partial));
   };
 
   return (
@@ -178,6 +191,15 @@ export function SettingsView({ settings, onChange, onBack }: Props) {
       <p className={ui.meta}>
         {t('hyperfocus.setting.hint')} Default {DEFAULT_HYPERFOCUS_MINUTES} min.
       </p>
+      <label className={ui.label} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <input
+          type="checkbox"
+          checked={settings.previewHyperfocus}
+          onChange={(e) => onChange({ previewHyperfocus: e.target.checked })}
+        />
+        {t('hyperfocus.preview')}
+      </label>
+      <p className={ui.meta}>{t('hyperfocus.preview.hint')}</p>
 
       <h2 className={ui.screenTitle} style={{ fontSize: '1.1rem' }}>
         {t('hotkeys.title')}
@@ -193,6 +215,61 @@ export function SettingsView({ settings, onChange, onBack }: Props) {
         {t('aiBrainDump.label')}
       </label>
       <p className={ui.meta}>{t('aiBrainDump.hint')}</p>
+
+      <label className={ui.label}>
+        {t('aiBrainDump.llmKey')}
+        <input
+          className={ui.input}
+          type="password"
+          autoComplete="off"
+          spellCheck={false}
+          value={llm.apiKey}
+          placeholder="sk-…"
+          onChange={(e) => patchLlm({ apiKey: e.target.value })}
+        />
+      </label>
+      <p className={ui.meta}>{t('aiBrainDump.llmKey.hint')}</p>
+      <label className={ui.label}>
+        {t('aiBrainDump.llmBase')}
+        <input
+          className={ui.input}
+          type="url"
+          value={llm.baseUrl}
+          placeholder={DEFAULT_LLM_BASE_URL}
+          onChange={(e) => patchLlm({ baseUrl: e.target.value })}
+        />
+      </label>
+      <label className={ui.label}>
+        {t('aiBrainDump.llmModel')}
+        <input
+          className={ui.input}
+          value={llm.model}
+          placeholder={DEFAULT_LLM_MODEL}
+          onChange={(e) => patchLlm({ model: e.target.value })}
+        />
+      </label>
+      {llm.apiKey ? (
+        <button
+          type="button"
+          className={`${ui.btn} ${ui.btnMuted}`}
+          onClick={() => {
+            clearLlmSettings();
+            setLlm(loadLlmSettings());
+          }}
+        >
+          {t('aiBrainDump.llmClear')}
+        </button>
+      ) : null}
+
+      <label className={ui.label} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <input
+          type="checkbox"
+          checked={settings.qaRestBuryOverride}
+          onChange={(e) => onChange({ qaRestBuryOverride: e.target.checked })}
+        />
+        {t('restBury.override')}
+      </label>
+      <p className={ui.meta}>{t('restBury.override.hint')}</p>
 
       <button type="button" className={`${ui.btn} ${ui.btnLg} ${ui.btnGhost}`} onClick={onBack}>
         Back to Meds

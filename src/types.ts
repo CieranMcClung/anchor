@@ -58,16 +58,28 @@ export interface Settings {
   bufferPercent: number;
   /** 45–90. Soft chip only — never cuts focus. */
   hyperfocusMinutes: number;
-  /** P1 B1 stub. Default off — no API. Offline parks the raw dump. */
+  /** B1 brain-dump UI. Default on. Local engine always works offline. */
   aiBrainDump: boolean;
+  /** QA: show the A4 hyperfocus chip without waiting 45–90m. Never cuts focus. */
+  previewHyperfocus: boolean;
+  /**
+   * QA / Item 7: Rest bury without waiting for Comedown window mins.
+   * Offline and Comedown already allow bury; this skips the wait.
+   */
+  qaRestBuryOverride: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   ...DEFAULT_PK_WINDOWS,
   bufferPercent: DEFAULT_BUFFER_PERCENT,
   hyperfocusMinutes: DEFAULT_HYPERFOCUS_MINUTES,
-  aiBrainDump: false,
+  aiBrainDump: true,
+  previewHyperfocus: false,
+  qaRestBuryOverride: false,
 };
+
+/** Pre-buffer ceiling for B1 atomics. Displayed time still gets the buffer. */
+export const ATOMIC_ESTIMATE_MAX = 9;
 
 export interface Anchor {
   id: string;
