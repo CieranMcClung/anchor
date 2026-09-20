@@ -1,48 +1,88 @@
-# Anchor
+# Keel
 
-Calm, local-first single-page app for AuDHD executive dysfunction: task initiation, visible time, and routines organised around a Methylphenidate XL planning window. Four **in-app autonomous agents** make Anchor an active executive-function engine — not a passive dashboard.
+Display name **Keel** by **Keel Labs** (`brand.appName` / `brand.orgName`). One-release subtitle: formerly Anchor. Repo and Pages path stay `/anchor/`.
 
-**Not medical advice.** Med phases are personal estimates for organising tasks only.
+Calm, local-first P0 for adult AuDHD on **Methylphenidate XL 18 mg**. Bridge intent → execution. Zero shame. No streaks, no overdue chrome, no red warnings.
 
-Live: https://cieranmcclung.github.io/anchor/
+**Not medical advice.** Onset / Peak / Comedown are a **product timing model** for organising today — not a plasma prediction, not a diagnosis, and not a dopamine tank. See `disclaimer.pkZones`.
 
-## Agents
+**Live:** https://cieranmcclung.github.io/anchor/
 
-1. **Pharmacokinetic Orchestrator** — watches elapsed time since logged (or usual) dose; auto-reorders the queue by biological window (peak → deep first; comedown warning ~45m early; rest protection buries high-load with a “show all” escape). Mode persisted in `localStorage`.
-2. **Un-Stick Deconstruction** — in Single Focus, **I’m Stuck / Paralyzed** fragments the task into **exactly three** ~2-minute micro-steps; only Step 1 is shown until completed, then Step 2, then Step 3.
-3. **Natural Language Brain-Dump** — FAB + `c` / `/`; heuristic parse into tasks with Low/Med/High load and estimate × **1.4** buffer; routes to rails / parking / tomorrow. Optional mic when Web Speech API exists.
-4. **Somatic Reset & Sensory Anchor** — if focus sits idle or overrun past its buffer, a soft prompt offers a 2-minute somatic reset, dismiss, or micro-step. Never a red alarm.
+## Enable GitHub Pages
 
-Prompts coalesce (session memory + cooldown) so agents feel always-on without spam.
+1. Repo **Settings → Pages**
+2. Source: **GitHub Actions** (this repo already has `.github/workflows/deploy-pages.yml`)
+3. After a green `Deploy to GitHub Pages` run on `main`, the app is at **https://cieranmcclung.github.io/anchor/**
+4. Vite `base` is `/anchor/` for project Pages. Custom domain not required.
 
-## Other features
+Manual dispatch: **Actions → Deploy to GitHub Pages → Run workflow**.
 
-- **Daily anchors** — morning / evening basics templates with cognitive load, guilt-free skip
-- **Dose sync** — one-tap “Took my dose”; onset → peak → comedown → offline
-- **Single focus** — definition of done, buffered timer, body-double option
-- **Parking lot** — capture without derailing focus
-- **Settings / first-run** — usual dose time, XL label, window overrides, rest protection; disclaimer retained
-
-## Run
+## Run locally
 
 ```bash
 npm install
 npm run dev
 ```
 
-## Build
+## Build / test
 
 ```bash
+npm test
 npm run build
 npm run preview
 ```
 
-Vite `base` is `/anchor/` for GitHub Pages.
+`preview` serves `dist` (same `/anchor/` base). After the first production load, a service worker caches the shell so Modules A–D work offline.
 
-## Persistence
+## Product lock (P0)
 
-`localStorage` key `anchor-app-v1` (legacy keys + agents schema migrated safely). No backend.
+| Module | What ships |
+|---|---|
+| **A** | Today only. Load Low / Med / High (soft caps 1 / 2 / 3). Durations = raw × 1.4, nearest 5 min. |
+| **B** | One XL 18 mg dose-time per day. Missing dose → zone **Unknown**; app stays usable. |
+| **C** | Single Focus HUD: begin / pause / done, Un-Stick, Not This / Swap. Timer never force-cuts hyperfocus. |
+| **D** | Thought-capture FAB → Park (capture-on-interrupt). Rest Protection Mode, user enter/exit only. |
 
-## Stack
+Persistence (`localStorage` key `anchor-p0-v1`): load, dose-time, PK window overrides, anchors, active focus, park, rest flag. Settings survive day rollover.
 
-Vite + React + TypeScript, CSS modules, dark slate default, UK English, mobile-first.
+### Architecture priors (behaviour, not extra modules)
+
+- **Monotropism** — one thing at a time, interest-led capture, high interrupt cost, soft exits
+- **Transition friction** — +40% buffers, pause / Not This, park instead of derailing
+- **Sensory fatigue** — muted slate/graphite, no urgency chrome, Rest is voluntary
+- **ADHD motivation** — delay aversion / interest timing. No deficiency-tank or refill gamification
+
+### PK windows (focus-energy placeholders)
+
+User-editable in **Meds → Timing windows**. User-anchored product model, not a plasma curve. UK “XL” is not one curve (Medikinet / Equasym often ~8 h). Comedown is highly individual.
+
+Internal bins (not chips): Rising 0–2 / Climb 2–6 / Peak 6–10 / Taper 10–12+.
+
+| Setting | Default | Visible chip |
+|---|---|---|
+| `onsetEndHours` | **2** | **Onset** ~0–2h rising; climbing 2–6h still Onset (never Peak-as-Tmax) |
+| `peakEndHours` | **10** | **Peak** ~6–10h focus-energy plateau |
+| `comedownEndHours` | **12** | **Comedown** ~10–12h+ |
+
+Soft dose-log cue ~45 min before Comedown — not a prediction. Rest Mode is separate. Superseded `1/5/8` and Peak-as-2–6 (`2/6/10`) migrate to these defaults.
+
+Visible labels: **Onset | Peak | Comedown** only (`efficacy.zone.onset` / `.peak` / `.comedown`).
+
+## Architecture
+
+```
+src/
+  App.tsx                 shell routes: Today · Meds · Rest (+ Settings)
+  copy/strings.p0.json    zero-shame copy dictionary
+  types.ts                DEFAULT_PK_WINDOWS + app state
+  utils/pk.ts             zone engine (settings-aware)
+  utils/duration.ts       ×1.4, nearest 5 min
+  utils/storage.ts        localStorage + legacy migrate
+  components/             HUD, anchors, meds, rest, capture, settings
+```
+
+Stack: Vite + React + TypeScript, CSS modules, design tokens from P0 UX (`#12141a` base, muted slate/graphite only).
+
+## Copy & design
+
+UI strings come from `src/copy/strings.p0.json` keys. Tokens match `P0_DESIGN` hex values. No light theme, no streak counters, no guilt chrome.

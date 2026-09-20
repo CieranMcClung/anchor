@@ -1,165 +1,78 @@
-import type { AnchorBlock } from '../types';
+import type { Anchor, Load } from '../types';
+import { bufferedMinutes } from './duration';
+import { newId } from './time';
 
-export function morningTemplate(): AnchorBlock[] {
-  return [
-    {
-      id: crypto.randomUUID(),
-      name: 'Meds + water',
-      plannedStart: '08:00',
-      durationMinutes: 5,
-      cognitiveLoad: 'low',
-      routine: 'morning',
-      preferredMedPhase: 'before',
-      status: 'upcoming',
-    },
-    {
-      id: crypto.randomUUID(),
-      name: 'Breakfast',
-      plannedStart: '08:15',
-      durationMinutes: 20,
-      cognitiveLoad: 'low',
-      routine: 'morning',
-      preferredMedPhase: 'onset',
-      status: 'upcoming',
-    },
-    {
-      id: crypto.randomUUID(),
-      name: 'Brush teeth',
-      plannedStart: '08:40',
-      durationMinutes: 5,
-      cognitiveLoad: 'low',
-      routine: 'morning',
-      preferredMedPhase: 'onset',
-      status: 'upcoming',
-    },
-    {
-      id: crypto.randomUUID(),
-      name: 'Get dressed',
-      plannedStart: '08:50',
-      durationMinutes: 10,
-      cognitiveLoad: 'low',
-      routine: 'morning',
-      preferredMedPhase: 'onset',
-      status: 'upcoming',
-    },
-    {
-      id: crypto.randomUUID(),
-      name: 'Open Anchor / plan day',
-      plannedStart: '09:00',
-      durationMinutes: 10,
-      cognitiveLoad: 'medium',
-      routine: 'morning',
-      preferredMedPhase: 'onset',
-      status: 'upcoming',
-    },
-  ];
+interface Seed {
+  title: string;
+  dod: string;
+  rawMinutes: number;
+  load: Load;
 }
 
-export function eveningTemplate(): AnchorBlock[] {
-  return [
+const SEEDS: Record<Load, Seed[]> = {
+  low: [
     {
-      id: crypto.randomUUID(),
-      name: 'Log off screens',
-      plannedStart: '21:00',
-      durationMinutes: 10,
-      cognitiveLoad: 'low',
-      routine: 'evening',
-      preferredMedPhase: 'offline',
-      status: 'upcoming',
+      title: 'Meds + water',
+      dod: 'Dose taken, glass of water done.',
+      rawMinutes: 5,
+      load: 'low',
+    },
+  ],
+  medium: [
+    {
+      title: 'Meds + water',
+      dod: 'Dose taken, glass of water done.',
+      rawMinutes: 5,
+      load: 'low',
     },
     {
-      id: crypto.randomUUID(),
-      name: 'Tidy one surface',
-      plannedStart: '21:15',
-      durationMinutes: 10,
-      cognitiveLoad: 'low',
-      routine: 'evening',
-      preferredMedPhase: 'offline',
-      status: 'upcoming',
+      title: 'One useful block',
+      dod: 'The next useful thing is far enough to put down.',
+      rawMinutes: 25,
+      load: 'medium',
+    },
+  ],
+  high: [
+    {
+      title: 'Meds + water',
+      dod: 'Dose taken, glass of water done.',
+      rawMinutes: 5,
+      load: 'low',
     },
     {
-      id: crypto.randomUUID(),
-      name: 'Brush teeth',
-      plannedStart: '21:30',
-      durationMinutes: 5,
-      cognitiveLoad: 'low',
-      routine: 'evening',
-      preferredMedPhase: 'offline',
-      status: 'upcoming',
+      title: 'One useful block',
+      dod: 'The next useful thing is far enough to put down.',
+      rawMinutes: 25,
+      load: 'medium',
     },
     {
-      id: crypto.randomUUID(),
-      name: 'Unwind',
-      plannedStart: '21:40',
-      durationMinutes: 20,
-      cognitiveLoad: 'low',
-      routine: 'evening',
-      preferredMedPhase: 'offline',
-      status: 'upcoming',
+      title: 'Deep focus block',
+      dod: 'The main piece is far enough to put down.',
+      rawMinutes: 45,
+      load: 'high',
     },
-    {
-      id: crypto.randomUUID(),
-      name: 'Soft close',
-      plannedStart: '22:00',
-      durationMinutes: 10,
-      cognitiveLoad: 'low',
-      routine: 'evening',
-      preferredMedPhase: 'offline',
-      status: 'upcoming',
-    },
-  ];
+  ],
+};
+
+export function seedAnchors(load: Load): Anchor[] {
+  return SEEDS[load].map((s) => ({
+    id: newId(),
+    title: s.title,
+    dod: s.dod,
+    rawMinutes: s.rawMinutes,
+    bufferedMinutes: bufferedMinutes(s.rawMinutes),
+    load: s.load,
+    status: 'open',
+  }));
 }
 
-export function defaultRailBlocks(): AnchorBlock[] {
-  return [
-    ...morningTemplate(),
-    {
-      id: crypto.randomUUID(),
-      name: 'One meaningful task',
-      plannedStart: '10:30',
-      durationMinutes: 45,
-      cognitiveLoad: 'high',
-      routine: 'anytime',
-      preferredMedPhase: 'peak',
-      status: 'upcoming',
-    },
-    {
-      id: crypto.randomUUID(),
-      name: 'Admin / messages',
-      plannedStart: '14:00',
-      durationMinutes: 25,
-      cognitiveLoad: 'medium',
-      routine: 'anytime',
-      preferredMedPhase: 'peak',
-      status: 'upcoming',
-    },
-    ...eveningTemplate(),
-  ];
-}
-
-export function buildRailsFromSettings(opts: {
-  useMorning: boolean;
-  useEvening: boolean;
-  existing?: AnchorBlock[];
-}): AnchorBlock[] {
-  const custom =
-    opts.existing?.filter((b) => b.routine === 'anytime') ??
-    [
-      {
-        id: crypto.randomUUID(),
-        name: 'One meaningful task',
-        plannedStart: '10:30',
-        durationMinutes: 45,
-        cognitiveLoad: 'high' as const,
-        routine: 'anytime' as const,
-        preferredMedPhase: 'peak' as const,
-        status: 'upcoming' as const,
-      },
-    ];
-
-  return [
-    ...(opts.useMorning ? morningTemplate() : []),
-    ...custom.map((b) => ({ ...b, status: 'upcoming' as const })),
-    ...(opts.useEvening ? eveningTemplate() : []),
-  ];
+export function loadCue(load: Load): string {
+  switch (load) {
+    case 'low':
+      return 'One thing. Pick it when you’re ready.';
+    case 'medium':
+      return 'A couple of things. Pick one.';
+    case 'high':
+      return 'Three things. Pick one.';
+  }
 }
