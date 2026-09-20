@@ -50,17 +50,19 @@ Persistence (`localStorage` key `anchor-p0-v1`): load, dose-time, PK window over
 - **Sensory fatigue** — muted slate/graphite, no urgency chrome, Rest is voluntary
 - **ADHD motivation** — delay aversion / interest timing. No deficiency-tank or refill gamification
 
-### PK windows (Concerta/OROS-class placeholders)
+### PK windows (focus-energy placeholders)
 
-User-editable in **Meds → Timing windows**. Product modelling only. UK “XL” is not one curve (Medikinet / Equasym often ~8 h). Comedown is highly individual.
+User-editable in **Meds → Timing windows**. User-anchored product model, not a plasma curve. UK “XL” is not one curve (Medikinet / Equasym often ~8 h). Comedown is highly individual.
 
-| Setting | Default | Placeholder map |
+Internal bins (not chips): Rising 0–2 / Climb 2–6 / Peak 6–10 / Taper 10–12+.
+
+| Setting | Default | Visible chip |
 |---|---|---|
-| `onsetEndHours` | **2** | **Onset** ~0–2h |
-| `peakEndHours` | **6** | **Peak** ~2–6h |
-| `comedownEndHours` | **10** | **Comedown** ~6–10h+ (chip stays Comedown after 10h; Rest Mode is separate) |
+| `onsetEndHours` | **2** | **Onset** ~0–2h rising; climbing 2–6h still Onset (never Peak-as-Tmax) |
+| `peakEndHours` | **10** | **Peak** ~6–10h focus-energy plateau |
+| `comedownEndHours` | **12** | **Comedown** ~10–12h+ |
 
-Soft dose-log cue near the end of Comedown — not a prediction, never an alarm. Superseded placeholders (`1/5/8` and `2/10/12`) migrate to these defaults.
+Soft dose-log cue ~45 min before Comedown — not a prediction. Rest Mode is separate. Superseded `1/5/8` and Peak-as-2–6 (`2/6/10`) migrate to these defaults.
 
 Visible labels: **Onset | Peak | Comedown** only (`efficacy.zone.onset` / `.peak` / `.comedown`).
 

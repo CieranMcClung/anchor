@@ -1,5 +1,5 @@
 /**
- * MPH XR zone engine — product modelling only, not medical advice.
+ * MPH XR zone engine — focus-energy scaffolding, not medical advice.
  *
  * Behavioral priors (architecture, not features):
  * - Monotropism: one active focus, interest-led capture, high interrupt cost, soft exits
@@ -7,12 +7,17 @@
  * - Sensory fatigue: muted chrome, Rest is user-enter/exit only
  * - ADHD framing: delay-aversion / interest–motivation — never a dopamine tank or refill game
  *
- * Placeholders assume Concerta/OROS-class 18 mg. UK “XL” is not one curve.
+ * Internal four-bin map (Concerta/OROS-class placeholders, not a plasma curve):
+ *   Rising 0–2h · Climb 2–6h · Peak 6–10h · Taper 10–12h+
+ * Visible chips: Onset (rising + climb) | Peak | Comedown.
+ * Do not present 2–6h as Peak or as OROS Tmax. UK “XL” is not one curve.
  */
 
 import {
+  COMEDOWN_NUDGE_LEAD_HOURS,
   DEFAULT_PK_WINDOWS,
-  TROUGH_NUDGE_LEAD_HOURS,
+  PEAK_PLATEAU_START_HOURS,
+  type PkScaffoldBin,
   type PkWindows,
   type PkZone,
   type Settings,
@@ -21,20 +26,21 @@ import { t } from '../copy/t';
 import { hhmmToMinutes, minutesSinceMidnight, todayKey } from './time';
 import type { DoseLog } from '../types';
 
-export { DEFAULT_PK_WINDOWS };
+export { DEFAULT_PK_WINDOWS, PEAK_PLATEAU_START_HOURS };
 
-/** Live-site and earlier P0 placeholders to migrate off. */
+/** Live-site 1/5/8 and the incorrect Peak-as-2–6 placeholder. */
 export const SUPERSEDED_PK_PLACEHOLDERS: ReadonlyArray<PkWindows> = [
   { onsetEndHours: 1, peakEndHours: 5, comedownEndHours: 8 },
-  { onsetEndHours: 2, peakEndHours: 10, comedownEndHours: 12 },
+  { onsetEndHours: 2, peakEndHours: 6, comedownEndHours: 10 },
 ];
 
 export interface PkSnapshot {
   zone: PkZone;
+  bin: PkScaffoldBin;
   elapsedHours: number | null;
   playhead: number;
   isUnknown: boolean;
-  approachingTrough: boolean;
+  approachingComedown: boolean;
   doseKey: string | null;
   windows: PkWindows;
   peakStartHours: number;
@@ -52,12 +58,15 @@ export function isSupersededPkPlaceholder(windows: PkWindows): boolean {
   return SUPERSEDED_PK_PLACEHOLDERS.some((p) => windowsMatch(windows, p));
 }
 
-/** Peak starts when Onset ends (0–2h Onset, 2–6h Peak in the default model). */
+/** Plateau start: default 6h. Climb before this stays Onset. */
 export function peakStartHours(windows: PkWindows): number {
-  return windows.onsetEndHours;
+  return Math.min(
+    windows.peakEndHours,
+    Math.max(windows.onsetEndHours, PEAK_PLATEAU_START_HOURS)
+  );
 }
 
-/** Clamp user edits: Onset < Peak ≤ Comedown. Comedown stays a soft window, not an 8h alarm. */
+/** Clamp user edits: Onset < Peak ≤ Comedown. Comedown is a soft window, not an 8h alarm. */
 export function normalizePkWindows(raw: Partial<PkWindows>): PkWindows {
   const onset = finiteHours(raw.onsetEndHours, DEFAULT_PK_WINDOWS.onsetEndHours);
   const peak = Math.max(
@@ -85,17 +94,35 @@ function roundTenths(n: number): number {
   return Math.round(n * 10) / 10;
 }
 
+export function scaffoldBin(
+  elapsedHours: number | null,
+  windows: PkWindows
+): PkScaffoldBin {
+  if (elapsedHours === null || !Number.isFinite(elapsedHours) || elapsedHours < 0) {
+    return 'unknown';
+  }
+  const peakFrom = peakStartHours(windows);
+  if (elapsedHours < windows.onsetEndHours) return 'rising';
+  if (elapsedHours < peakFrom) return 'climb';
+  if (elapsedHours < windows.peakEndHours) return 'peak';
+  return 'taper';
+}
+
 export function zoneFromElapsed(
   elapsedHours: number | null,
   windows: PkWindows
 ): PkZone {
-  if (elapsedHours === null || !Number.isFinite(elapsedHours) || elapsedHours < 0) {
-    return 'unknown';
+  switch (scaffoldBin(elapsedHours, windows)) {
+    case 'rising':
+    case 'climb':
+      return 'onset';
+    case 'peak':
+      return 'peak';
+    case 'taper':
+      return 'comedown';
+    case 'unknown':
+      return 'unknown';
   }
-  if (elapsedHours < windows.onsetEndHours) return 'onset';
-  if (elapsedHours < windows.peakEndHours) return 'peak';
-  if (elapsedHours < windows.comedownEndHours) return 'comedown';
-  return 'trough';
 }
 
 export function getPkSnapshot(
@@ -111,10 +138,11 @@ export function getPkSnapshot(
   if (!logged) {
     return {
       zone: 'unknown',
+      bin: 'unknown',
       elapsedHours: null,
       playhead: 0,
       isUnknown: true,
-      approachingTrough: false,
+      approachingComedown: false,
       doseKey: null,
       windows,
       peakStartHours: peakFrom,
@@ -123,39 +151,37 @@ export function getPkSnapshot(
 
   const elapsedHours =
     (minutesSinceMidnight(now) - hhmmToMinutes(logged)) / 60;
+  const bin = scaffoldBin(elapsedHours, windows);
   const zone = zoneFromElapsed(elapsedHours, windows);
   const scale = Math.max(windows.comedownEndHours, windows.peakEndHours, 0.5);
   const playhead =
     elapsedHours < 0 ? 0 : Math.min(1, elapsedHours / scale);
 
-  const hoursUntilTrough = windows.comedownEndHours - elapsedHours;
-  const approachingTrough =
-    zone === 'comedown' &&
-    hoursUntilTrough > 0 &&
-    hoursUntilTrough <= TROUGH_NUDGE_LEAD_HOURS;
+  const hoursUntilComedown = windows.peakEndHours - elapsedHours;
+  const approachingComedown =
+    zone === 'peak' &&
+    hoursUntilComedown > 0 &&
+    hoursUntilComedown <= COMEDOWN_NUDGE_LEAD_HOURS;
 
   return {
     zone,
+    bin,
     elapsedHours,
     playhead,
     isUnknown: false,
-    approachingTrough,
+    approachingComedown,
     doseKey: `${today}|${logged}`,
     windows,
     peakStartHours: peakFrom,
   };
 }
 
-/** Visible PK chrome is Onset | Peak | Comedown only. Post-comedown uses Comedown, not a fourth chip. */
-export function visiblePkZone(
-  zone: PkZone
-): 'onset' | 'peak' | 'comedown' | 'unknown' {
-  if (zone === 'trough') return 'comedown';
+export function visiblePkZone(zone: PkZone): PkZone {
   return zone;
 }
 
 export function zoneLabel(zone: PkZone): string {
-  switch (visiblePkZone(zone)) {
+  switch (zone) {
     case 'onset':
       return t('efficacy.zone.onset');
     case 'peak':
@@ -171,7 +197,18 @@ export function timelineSegments(windows: PkWindows) {
   const peakFrom = peakStartHours(windows);
   const end = Math.max(windows.comedownEndHours, windows.peakEndHours);
   return [
-    { zone: 'onset' as const, token: 'onset' as const, from: 0, to: peakFrom },
+    {
+      zone: 'onset' as const,
+      token: 'onset' as const,
+      from: 0,
+      to: windows.onsetEndHours,
+    },
+    {
+      zone: 'onset' as const,
+      token: 'climb' as const,
+      from: windows.onsetEndHours,
+      to: peakFrom,
+    },
     {
       zone: 'peak' as const,
       token: 'peak' as const,

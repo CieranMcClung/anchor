@@ -1,6 +1,8 @@
 export type Load = 'low' | 'medium' | 'high';
-/** Product modelling zones. UI chrome is Onset | Peak | Comedown only; post-comedown is not a fourth chip. */
-export type PkZone = 'onset' | 'peak' | 'comedown' | 'trough' | 'unknown';
+/** Visible PK chips: Onset | Peak | Comedown only. */
+export type PkZone = 'onset' | 'peak' | 'comedown' | 'unknown';
+/** Internal focus-energy bins (not shown as chips). */
+export type PkScaffoldBin = 'rising' | 'climb' | 'peak' | 'taper' | 'unknown';
 export type Route = 'today' | 'meds' | 'rest' | 'settings';
 export type AnchorStatus = 'open' | 'done';
 export type FocusRunState = 'ready' | 'running' | 'paused';
@@ -13,17 +15,21 @@ export const LOAD_CAPS: Record<Load, number> = {
 
 export const GRACE_MINUTES = 3;
 
-/** Soft dose-log cue near the end of Comedown. Never an alarm or prediction. */
-export const TROUGH_NUDGE_LEAD_HOURS = 0.75;
+/** Soft dose-log cue ~45 min before Comedown. Never an alarm or prediction. */
+export const COMEDOWN_NUDGE_LEAD_HOURS = 0.75;
+
+/** Focus-energy plateau start (hours post dose). Climb 2–6h stays Onset — not Peak-as-Tmax. */
+export const PEAK_PLATEAU_START_HOURS = 6;
 
 /**
- * Concerta/OROS-class P0 placeholders (product modelling, not a plasma curve).
- * Visible labels: Onset | Peak | Comedown only. Rest Mode is a separate surface.
+ * Concerta/OROS-class P0 placeholders — focus-energy scaffolding, not a plasma curve.
+ * Internal bins: Rising 0–2 / Climb 2–6 / Peak 6–10 / Taper 10–12+.
+ * Visible chips: Onset (rising+climb) | Peak | Comedown. Rest Mode is separate.
  */
 export const DEFAULT_PK_WINDOWS = {
   onsetEndHours: 2,
-  peakEndHours: 6,
-  comedownEndHours: 10,
+  peakEndHours: 10,
+  comedownEndHours: 12,
 } as const;
 
 export interface PkWindows {

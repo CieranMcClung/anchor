@@ -64,7 +64,7 @@ export function SettingsView({ settings, onChange, onBack }: Props) {
       <div>
         <h1 className={ui.screenTitle}>Settings</h1>
         <p className={ui.cue}>
-          Placeholder windows for organising the day, from your dose log.{' '}
+          Focus-energy windows from your dose log.{' '}
           {t('efficacy.zone.onset')}, {t('efficacy.zone.peak')}, and{' '}
           {t('efficacy.zone.comedown')} only — not a plasma curve, not a
           diagnosis, and not an optimisation of medication.
@@ -82,25 +82,26 @@ export function SettingsView({ settings, onChange, onBack }: Props) {
         onCommit={commit}
       />
       <p className={ui.meta}>
-        Default {DEFAULT_PK_WINDOWS.onsetEndHours}h. {t('efficacy.zone.onset')}{' '}
-        placeholder ~0–{DEFAULT_PK_WINDOWS.onsetEndHours}h after your dose log.
+        Default {DEFAULT_PK_WINDOWS.onsetEndHours}h. {t('efficacy.zone.onset')} is
+        a focus-energy rising window ~0–{DEFAULT_PK_WINDOWS.onsetEndHours}h
+        (effects often from ~1h). Climbing ~2–6h still reads as{' '}
+        {t('efficacy.zone.onset')} — not Peak.
       </p>
 
       <HoursField
         label={`${t('efficacy.zone.peak')} ends (hours after dose)`}
         field="peakEndHours"
         value={settings.peakEndHours}
-        min={2}
+        min={4}
         max={16}
         draft={draft}
         setDraft={setDraft}
         onCommit={commit}
       />
       <p className={ui.meta}>
-        Default {DEFAULT_PK_WINDOWS.peakEndHours}h. {t('efficacy.zone.peak')}{' '}
-        placeholder ~{DEFAULT_PK_WINDOWS.onsetEndHours}–
-        {DEFAULT_PK_WINDOWS.peakEndHours}h. A product map from your log, not a lab
-        value.
+        Default {DEFAULT_PK_WINDOWS.peakEndHours}h. {t('efficacy.zone.peak')} is
+        the focus-energy plateau ~6–{DEFAULT_PK_WINDOWS.peakEndHours}h — a
+        user-anchored map from your log, not a plasma Tmax and not 2–6h Peak.
       </p>
 
       <HoursField
@@ -115,9 +116,9 @@ export function SettingsView({ settings, onChange, onBack }: Props) {
       />
       <p className={ui.meta}>
         Default {DEFAULT_PK_WINDOWS.comedownEndHours}h. {t('efficacy.zone.comedown')}{' '}
-        placeholder from ~{DEFAULT_PK_WINDOWS.peakEndHours}h. After that the chip
-        stays {t('efficacy.zone.comedown')} — Rest Mode is separate, if you want
-        it. A quiet dose-log cue may appear; not an alarm.
+        from ~{DEFAULT_PK_WINDOWS.peakEndHours}h. Soft and highly individual. Rest
+        Mode is a separate surface, not a fourth zone. A quiet dose-log cue may
+        appear; not an alarm.
       </p>
 
       <p className={ui.disclaimer}>{t('disclaimer.pkZones')}</p>

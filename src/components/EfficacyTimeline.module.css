@@ -12,12 +12,13 @@
   opacity: 0.45;
 }
 
-.trough {
-  opacity: 0.7;
-}
-
 .segOnset {
   background: var(--timeline-onset);
+}
+
+.segClimb {
+  background: var(--timeline-onset);
+  opacity: 0.55;
 }
 
 .segPeak {

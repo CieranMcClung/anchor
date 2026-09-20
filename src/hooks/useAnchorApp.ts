@@ -401,7 +401,7 @@ export function useAnchorApp() {
     state.load !== null && openCount(state.anchors) < LOAD_CAPS[state.load];
 
   const showComedownNudge =
-    pk.approachingTrough &&
+    pk.approachingComedown &&
     pk.doseKey !== null &&
     state.comedownNudgeDismissedKey !== pk.doseKey &&
     !state.restMode;
@@ -409,7 +409,7 @@ export function useAnchorApp() {
   const showRestSuggest =
     !state.restMode &&
     state.restSuggestDismissedDate !== state.date &&
-    pk.zone === 'trough';
+    pk.zone === 'comedown';
 
   const canSwap = state.anchors.some(
     (a) => a.status === 'open' && a.id !== state.focus?.anchorId

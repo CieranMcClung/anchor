@@ -33,8 +33,8 @@ export function MedsView({
         <h1 className={ui.screenTitle}>Meds</h1>
         <p className={ui.cue}>
           Methylphenidate XL 18 mg · one dose-time today. Onset, Peak, and
-          Comedown follow your log — a user-anchored map, not a plasma
-          prediction.
+          Comedown are focus-energy zones from your log — a user-anchored map,
+          not a plasma prediction.
         </p>
       </div>
 
