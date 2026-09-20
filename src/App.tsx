@@ -171,7 +171,9 @@ export default function App() {
       </section>
     ) : (
       <RestGate
-        onEnter={app.enterRest}
+        onEnter={() => app.enterRest()}
+        onBury={() => app.enterRest({ bury: true })}
+        canBury={app.restBuryAvailable}
         suggest={app.showRestSuggest || postHighRest}
         onDismissSuggest={() => {
           setPostHighRest(false);
@@ -202,6 +204,7 @@ export default function App() {
         unstickOpen={app.unstickOpen}
         canSwap={app.canSwap}
         hyperfocusMinutes={app.state.settings.hyperfocusMinutes}
+        previewHyperfocus={app.state.settings.previewHyperfocus}
         bufferPercent={app.state.settings.bufferPercent}
         onBegin={app.beginFocus}
         onPause={app.pauseFocusAction}
@@ -238,13 +241,23 @@ export default function App() {
             <p className={ui.label}>{t('restMode.enter.title')}</p>
             <p className={ui.cue}>{t('restMode.enter.body')}</p>
             <div className={ui.btnRow}>
-              <button
-                type="button"
-                className={`${ui.btn} ${ui.btnPrimary}`}
-                onClick={app.enterRest}
-              >
-                {t('restMode.enter.cta')}
-              </button>
+              {app.restBuryAvailable ? (
+                <button
+                  type="button"
+                  className={`${ui.btn} ${ui.btnPrimary}`}
+                  onClick={() => app.enterRest({ bury: true })}
+                >
+                  {t('restBury.cta')}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className={`${ui.btn} ${ui.btnPrimary}`}
+                  onClick={() => app.enterRest()}
+                >
+                  {t('restMode.enter.cta')}
+                </button>
+              )}
               <button
                 type="button"
                 className={`${ui.btn} ${ui.btnGhost}`}
@@ -303,6 +316,7 @@ export default function App() {
         bufferPercent={app.state.settings.bufferPercent}
         onClose={() => setCaptureOpen(false)}
         onSave={(text, load, rawMinutes) => app.parkThought(text, load, rawMinutes)}
+        onCommitToday={(tasks, raw) => app.commitDumpToToday(tasks, raw)}
       />
       <AddAnchorSheet
         open={app.addOpen}

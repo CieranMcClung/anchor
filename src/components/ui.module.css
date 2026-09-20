@@ -321,7 +321,11 @@
 }
 
 .sheetTall {
-  max-height: 72%;
+  max-height: 84%;
+}
+
+.sheetScroll {
+  overflow-y: auto;
 }
 
 .sheetHandle {

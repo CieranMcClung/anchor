@@ -27,7 +27,9 @@ describe('focus-energy PK placeholders', () => {
     expect(PEAK_PLATEAU_START_HOURS).toBe(6);
     expect(DEFAULT_SETTINGS.bufferPercent).toBe(40);
     expect(DEFAULT_SETTINGS.hyperfocusMinutes).toBe(60);
-    expect(DEFAULT_SETTINGS.aiBrainDump).toBe(false);
+    expect(DEFAULT_SETTINGS.aiBrainDump).toBe(true);
+    expect(DEFAULT_SETTINGS.previewHyperfocus).toBe(false);
+    expect(DEFAULT_SETTINGS.qaRestBuryOverride).toBe(false);
     expect(isSupersededPkPlaceholder(DEFAULT_PK_WINDOWS)).toBe(false);
     expect(
       isSupersededPkPlaceholder({

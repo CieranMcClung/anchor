@@ -15,6 +15,7 @@ interface Props {
   unstickOpen: boolean;
   canSwap: boolean;
   hyperfocusMinutes: number;
+  previewHyperfocus?: boolean;
   bufferPercent: number;
   onBegin: () => void;
   onPause: () => void;
@@ -35,6 +36,7 @@ export function SingleFocusHUD({
   unstickOpen,
   canSwap,
   hyperfocusMinutes,
+  previewHyperfocus,
   bufferPercent,
   onBegin,
   onPause,
@@ -55,7 +57,8 @@ export function SingleFocusHUD({
   const showHyperfocus = shouldShowHyperfocus(
     elapsedMs,
     hyperfocusMinutes,
-    Boolean(session.hyperfocusDismissed)
+    Boolean(session.hyperfocusDismissed),
+    Boolean(previewHyperfocus)
   );
 
   return (

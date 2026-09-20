@@ -1,11 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Load } from '../types';
 import { t } from '../copy/t';
-import {
-  isOffline,
-  stubAiBrainDump,
-  type AtomicTask,
-} from '../utils/aiBrainDump';
+import { deconstructLocal, isOffline, type AtomicTask } from '../utils/aiBrainDump';
+import { enhanceBrainDump } from '../utils/llmEnhance';
+import { loadChipLabel } from '../utils/routingHints';
+import { BrainDumpReview, type ReviewRow } from './BrainDumpReview';
 import ui from './ui.module.css';
 
 interface Props {
@@ -14,6 +13,14 @@ interface Props {
   bufferPercent: number;
   onClose: () => void;
   onSave: (text: string, load?: Load, rawMinutes?: number) => void;
+  onCommitToday: (tasks: AtomicTask[], raw: string) => void;
+}
+
+function toRows(tasks: AtomicTask[]): ReviewRow[] {
+  return tasks.map((task) => ({
+    ...task,
+    selected: !task.noise,
+  }));
 }
 
 export function ThoughtCapture({
@@ -22,60 +29,101 @@ export function ThoughtCapture({
   bufferPercent,
   onClose,
   onSave,
+  onCommitToday,
 }: Props) {
   const [text, setText] = useState('');
   const [load, setLoad] = useState<Load | undefined>(undefined);
-  const [review, setReview] = useState<AtomicTask[] | null>(null);
+  const [rows, setRows] = useState<ReviewRow[] | null>(null);
+  const [rawDump, setRawDump] = useState('');
+  const [sorting, setSorting] = useState(false);
 
-  const parsed = useMemo(
-    () =>
-      aiBrainDump && text.trim()
-        ? stubAiBrainDump(text, bufferPercent, !isOffline())
-        : null,
-    [aiBrainDump, bufferPercent, text]
-  );
-
-  if (!open) return null;
-
-  const discard = () => {
+  const reset = () => {
     setText('');
     setLoad(undefined);
-    setReview(null);
+    setRows(null);
+    setRawDump('');
+    setSorting(false);
+  };
+
+  const close = () => {
+    reset();
     onClose();
   };
 
-  const saveRaw = () => {
-    const trimmed = text.trim();
+  const saveRaw = (value = text) => {
+    const trimmed = value.trim();
     if (!trimmed) {
-      discard();
+      reset();
+      onClose();
       return;
     }
     onSave(trimmed, load);
-    discard();
+    reset();
+    onClose();
   };
 
-  const commitReview = (tasks: AtomicTask[]) => {
-    const keep = tasks.filter((task) => !task.noise);
+  const rejectReview = () => {
+    saveRaw(rawDump || text);
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (!rows) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const trimmed = (rawDump || text).trim();
+      if (trimmed) onSave(trimmed, load);
+      reset();
+      onClose();
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [open, rows, rawDump, text, load, onSave, onClose]);
+
+  if (!open) return null;
+
+  const commitReview = () => {
+    if (!rows) {
+      rejectReview();
+      return;
+    }
+    const keep = rows.filter((row) => row.selected && row.text.trim());
     if (keep.length === 0) {
-      saveRaw();
+      rejectReview();
       return;
     }
-    for (const task of keep) {
-      onSave(task.text, task.load, task.estimateMinutes);
-    }
-    discard();
+    onCommitToday(keep, rawDump || text);
+    close();
   };
 
-  const tryAi = () => {
-    if (!parsed) {
-      saveRaw();
+  const deconstruct = async () => {
+    const trimmed = text.trim();
+    if (!trimmed) {
+      close();
       return;
     }
-    if (parsed.mode === 'raw-park') {
-      saveRaw();
+    const local = deconstructLocal(trimmed, bufferPercent);
+    if (local.mode === 'raw-park' || local.tasks.length === 0) {
+      saveRaw(trimmed);
       return;
     }
-    setReview(parsed.tasks);
+    setSorting(true);
+    setRawDump(trimmed);
+    try {
+      const enhanced = await enhanceBrainDump(trimmed, bufferPercent);
+      const tasks = enhanced.tasks.length > 0 ? enhanced.tasks : local.tasks;
+      if (tasks.length === 0) {
+        saveRaw(trimmed);
+        return;
+      }
+      setRows(toRows(tasks));
+    } catch {
+      setRows(toRows(local.tasks));
+    } finally {
+      setSorting(false);
+    }
   };
 
   return (
@@ -84,61 +132,41 @@ export function ThoughtCapture({
         type="button"
         className={ui.sheetBackdrop}
         aria-label="Close capture"
-        onClick={discard}
+        onClick={rows ? rejectReview : close}
       />
       <div
-        className={`${ui.sheet} ${ui.sheetTall}`}
+        className={`${ui.sheet} ${ui.sheetTall} ${ui.sheetScroll}`}
         role="dialog"
         aria-labelledby="capture-title"
+        aria-busy={sorting}
       >
         <div className={ui.sheetHandle} />
         <p id="capture-title" className={ui.label}>
-          Park it
+          {rows ? t('aiBrainDump.reviewTitle') : 'Park it'}
         </p>
 
-        {review ? (
-          <>
-            <p className={ui.cue}>{t('aiBrainDump.review')}</p>
-            <div className={ui.block}>
-              {review.map((task, i) => (
-                <div key={`${task.text}-${i}`} className={ui.card}>
-                  <strong>{task.text}</strong>
-                  <p className={ui.meta}>
-                    {task.load} · {task.estimateMinutes} min → {task.bufferedMinutes}{' '}
-                    min
-                    {task.noise ? ` · ${t('aiBrainDump.noise')}` : ''}
-                    {task.dependsOn != null ? ` · after ${task.dependsOn + 1}` : ''}
-                  </p>
-                </div>
-              ))}
-            </div>
-            <button
-              type="button"
-              className={`${ui.btn} ${ui.btnLg} ${ui.btnPrimary}`}
-              onClick={() => commitReview(review)}
-            >
-              Save
-            </button>
-            <button
-              type="button"
-              className={`${ui.btn} ${ui.btnMuted}`}
-              onClick={saveRaw}
-            >
-              Park as written
-            </button>
-          </>
+        {rows ? (
+          <BrainDumpReview
+            rows={rows}
+            bufferPercent={bufferPercent}
+            onChange={setRows}
+            onCommit={commitReview}
+            onReject={rejectReview}
+          />
         ) : (
           <>
             <textarea
               className={ui.textarea}
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="A thought, a task, anything"
+              placeholder="A thought, a list, a wall of text — all fine"
               autoFocus
+              disabled={sorting}
             />
-            {aiBrainDump && parsed?.mode === 'raw-park' && text.trim() ? (
+            {aiBrainDump && isOffline() && text.trim() ? (
               <p className={ui.meta}>{t('aiBrainDump.offline')}</p>
             ) : null}
+            {sorting ? <p className={ui.meta}>{t('aiBrainDump.sorting')}</p> : null}
             <div className={ui.chipRow}>
               {(['low', 'medium', 'high'] as Load[]).map((opt) => (
                 <button
@@ -146,18 +174,40 @@ export function ThoughtCapture({
                   type="button"
                   className={`${ui.chip} ${load === opt ? ui.chipActive : ''}`}
                   onClick={() => setLoad(opt)}
+                  disabled={sorting}
                 >
-                  {opt === 'medium' ? 'Med' : opt[0]!.toUpperCase() + opt.slice(1)}
+                  {loadChipLabel(opt)}
                 </button>
               ))}
             </div>
-            <button
-              type="button"
-              className={`${ui.btn} ${ui.btnLg} ${ui.btnPrimary}`}
-              onClick={aiBrainDump ? tryAi : saveRaw}
-            >
-              Save
-            </button>
+            {aiBrainDump ? (
+              <>
+                <button
+                  type="button"
+                  className={`${ui.btn} ${ui.btnLg} ${ui.btnPrimary}`}
+                  onClick={() => void deconstruct()}
+                  disabled={sorting}
+                >
+                  {t('aiBrainDump.deconstruct')}
+                </button>
+                <button
+                  type="button"
+                  className={`${ui.btn} ${ui.btnMuted}`}
+                  onClick={() => saveRaw()}
+                  disabled={sorting}
+                >
+                  {t('aiBrainDump.parkRaw')}
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                className={`${ui.btn} ${ui.btnLg} ${ui.btnPrimary}`}
+                onClick={() => saveRaw()}
+              >
+                Save
+              </button>
+            )}
           </>
         )}
       </div>

@@ -64,7 +64,27 @@ P0 behaviour is unchanged. P1 adds local-only surfaces. No med optimisation. No 
 | **A4** | Soft hyperfocus chip after **45–90 min** continuous (tunable). Dismissible. Never cuts focus. |
 | **A5** | Today-only momentum: done / parked counts. No streaks, scores, badges, or rewards. |
 | **A6** | Global hotkeys (below). Existing capture shortcut **c** / **/** is unchanged. |
-| **B1** | AI brain-dump stub behind `aiBrainDump: false`. Local only; offline parks the raw dump. Voice is later. |
+| **B1** | Brain-dump deconstruction **on** (`aiBrainDump: true`). Local heuristic always works offline. Optional user-key LLM enhance. Voice is later. |
+
+### B1 brain-dump
+
+Capture FAB or `c` / `/` → paste a wall or bullets → **Deconstruct**.
+
+1. **Local engine (always):** splits chaos into atomic tasks, each **&lt;10 min pre-buffer**, rough load L/M/H, filler dropped or flagged, optional simple deps on “then” chains. No network.
+2. **Review sheet:** edit, uncheck, then **Commit selected to today** or **Reject — keep dump in Park**.
+3. Reject / empty / fail → the raw dump stays in Park. Nothing is scored.
+4. **Optional LLM enhance:** Settings stores an OpenAI-compatible key in `localStorage` key `keel-llm-v1` only. Missing key, offline, CORS, or any request failure → silent local fallback. **Never** put Cursor or server secrets in the SPA bundle. GitHub Pages has no proxy; many vendors block browser CORS, so local sorting is the offline-safe path.
+
+Toggle the UI in Settings if you want capture to stay “park as written” only.
+
+### QA overrides (same release)
+
+| Control | Where | Why |
+|---|---|---|
+| **Preview hyperfocus chip** | Settings | A4 chip without waiting 45–90 minutes. Dismissible. Never cuts focus. |
+| **Rest bury without waiting** | Settings | Item 7: Park leftover Today items and rest during **Comedown** or **offline** without waiting for PK window minutes. Timing window mins themselves stay clamped (Onset &lt; Peak ≤ Comedown). |
+
+Rest tab shows **Park what’s left and rest** when Comedown, offline, or the override is on. Ordinary Rest (no bury) still works anytime. Zero shame.
 
 ### Keyboard
 
@@ -109,12 +129,16 @@ src/
   utils/pk.ts             zone engine (settings-aware)
   utils/duration.ts       buffer 30–50% (default 40%), nearest 5 min
   utils/routingHints.ts   A1 zone+load chips (never force)
+  utils/aiBrainDump.ts    B1 local heuristic (offline)
+  utils/llmEnhance.ts     optional user-key enhance; silent local fallback
+  utils/llmKey.ts         API key in localStorage only (`keel-llm-v1`)
+  utils/restBury.ts       Item 7 park-and-rest (no minutes wait)
   utils/storage.ts        localStorage + legacy migrate
-  components/             HUD, anchors, meds, rest, capture, settings
+  components/             HUD, anchors, meds, rest, capture, review, settings
 ```
 
 Stack: Vite + React + TypeScript, CSS modules, design tokens from P0 UX (`#12141a` base, muted slate/graphite only).
 
 ## Copy & design
 
-UI strings come from `src/copy/strings.p0.json` and `src/copy/strings.p1.json`. Tokens match `P0_DESIGN` hex values. No light theme, no streak counters, no guilt chrome. Daily Anchors is still the noun for today’s list.
+UI strings come from `src/copy/strings.p0.json` and `src/copy/strings.p1.json`. Tokens match `P0_DESIGN` hex values. No light theme, no streak counters, no guilt chrome. Daily Anchors is still the noun for today’s list. Research bans: no medication optimisation, no dopamine tanks, no plasma-as-product language outside the disclaimer that names what this is not.

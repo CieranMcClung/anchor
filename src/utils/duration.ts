@@ -50,9 +50,11 @@ export function clampHyperfocusMinutes(n: unknown): number {
 export function shouldShowHyperfocus(
   elapsedMs: number,
   thresholdMinutes: number,
-  dismissed: boolean
+  dismissed: boolean,
+  preview = false
 ): boolean {
   if (dismissed) return false;
+  if (preview) return true;
   if (!Number.isFinite(elapsedMs) || elapsedMs <= 0) return false;
   return elapsedMs >= clampHyperfocusMinutes(thresholdMinutes) * 60 * 1000;
 }

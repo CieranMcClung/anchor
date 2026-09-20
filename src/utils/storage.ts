@@ -66,6 +66,9 @@ function isLoad(v: unknown): v is Load {
 
 export function normalizeSettings(raw: Partial<Settings> | Record<string, unknown>): Settings {
   const pk = normalizePkWindows(raw);
+  const fromP1Stub =
+    typeof raw.previewHyperfocus !== 'boolean' &&
+    typeof raw.qaRestBuryOverride !== 'boolean';
   return {
     ...pk,
     bufferPercent: clampBufferPercent(
@@ -76,7 +79,9 @@ export function normalizeSettings(raw: Partial<Settings> | Record<string, unknow
         ? raw.hyperfocusMinutes
         : DEFAULT_SETTINGS.hyperfocusMinutes
     ),
-    aiBrainDump: raw.aiBrainDump === true,
+    aiBrainDump: fromP1Stub ? true : raw.aiBrainDump !== false,
+    previewHyperfocus: raw.previewHyperfocus === true,
+    qaRestBuryOverride: raw.qaRestBuryOverride === true,
   };
 }
 
@@ -99,6 +104,8 @@ function migrateSettings(raw: unknown): Settings {
       bufferPercent: candidate.bufferPercent,
       hyperfocusMinutes: candidate.hyperfocusMinutes,
       aiBrainDump: candidate.aiBrainDump,
+      previewHyperfocus: candidate.previewHyperfocus,
+      qaRestBuryOverride: candidate.qaRestBuryOverride,
     };
   }
   if (
@@ -111,6 +118,8 @@ function migrateSettings(raw: unknown): Settings {
       bufferPercent: candidate.bufferPercent,
       hyperfocusMinutes: candidate.hyperfocusMinutes,
       aiBrainDump: candidate.aiBrainDump,
+      previewHyperfocus: candidate.previewHyperfocus,
+      qaRestBuryOverride: candidate.qaRestBuryOverride,
     };
   }
   return candidate;
