@@ -43,14 +43,44 @@ npm run preview
 | **C** | Single Focus HUD: begin / pause / done, Un-Stick, Not This / Swap. Timer never force-cuts hyperfocus. |
 | **D** | Thought-capture FAB → Park (capture-on-interrupt). Rest Protection Mode, user enter/exit only. |
 
-Persistence (`localStorage` key `anchor-p0-v1`): load, dose-time, PK window overrides, anchors, active focus, park, rest flag. Settings survive day rollover.
+Persistence (`localStorage` key `anchor-p0-v1`): load, dose-time, PK window overrides, buffer %, hyperfocus minutes, anchors, active focus, park, rest flag, today-only done list. Settings survive day rollover.
 
 ### Architecture priors (behaviour, not extra modules)
 
 - **Monotropism** — one thing at a time, interest-led capture, high interrupt cost, soft exits
-- **Transition friction** — +40% buffers, pause / Not This, park instead of derailing
+- **Transition friction** — 30–50% buffers (default 40%), pause / Not This, park instead of derailing
 - **Sensory fatigue** — muted slate/graphite, no urgency chrome, Rest is voluntary
 - **ADHD motivation** — delay aversion / interest timing. No deficiency-tank or refill gamification
+
+### P1 local-first (this release)
+
+P0 behaviour is unchanged. P1 adds local-only surfaces. No med optimisation. No dopamine-tank UI. No plasma language.
+
+| ID | What ships |
+|---|---|
+| **A3** | Buffer setting **30–50%**, default **40%**, persisted. Every displayed duration uses it (list, HUD, add-anchor preview). |
+| **A2** | HUD **Too Hard** → deeper local Un-Stick. **Overwhelmed** → park + Swap / Rest. Zero shame. |
+| **A1** | Zone + load **chips / hints only**. Ignore is fine. Never forces a start. |
+| **A4** | Soft hyperfocus chip after **45–90 min** continuous (tunable). Dismissible. Never cuts focus. |
+| **A5** | Today-only momentum: done / parked counts. No streaks, scores, badges, or rewards. |
+| **A6** | Global hotkeys (below). Existing capture shortcut **c** / **/** is unchanged. |
+| **B1** | AI brain-dump stub behind `aiBrainDump: false`. Local only; offline parks the raw dump. Voice is later. |
+
+### Keyboard
+
+Typed in an input or textarea is ignored. Documented in Settings too.
+
+| Key | Action |
+|---|---|
+| `c` or `/` | Capture (park a thought) — same as P0 |
+| `Space` | Start / pause the current focus |
+| `d` | Done |
+| `u` | Un-Stick |
+| `h` | Too Hard (deeper Un-Stick) |
+| `o` | Overwhelmed (park, then Swap or Rest) |
+| `s` | Swap |
+| `r` | Rest |
+| `Esc` | Close sheets |
 
 ### PK windows (focus-energy placeholders)
 
@@ -73,10 +103,12 @@ Visible labels: **Onset | Peak | Comedown** only (`efficacy.zone.onset` / `.peak
 ```
 src/
   App.tsx                 shell routes: Today · Meds · Rest (+ Settings)
-  copy/strings.p0.json    zero-shame copy dictionary
+  copy/strings.p0.json    P0 zero-shame copy dictionary
+  copy/strings.p1.json    P1 HUD / buffer / hotkeys / momentum copy
   types.ts                DEFAULT_PK_WINDOWS + app state
   utils/pk.ts             zone engine (settings-aware)
-  utils/duration.ts       ×1.4, nearest 5 min
+  utils/duration.ts       buffer 30–50% (default 40%), nearest 5 min
+  utils/routingHints.ts   A1 zone+load chips (never force)
   utils/storage.ts        localStorage + legacy migrate
   components/             HUD, anchors, meds, rest, capture, settings
 ```
@@ -85,4 +117,4 @@ Stack: Vite + React + TypeScript, CSS modules, design tokens from P0 UX (`#12141
 
 ## Copy & design
 
-UI strings come from `src/copy/strings.p0.json` keys. Tokens match `P0_DESIGN` hex values. No light theme, no streak counters, no guilt chrome.
+UI strings come from `src/copy/strings.p0.json` and `src/copy/strings.p1.json`. Tokens match `P0_DESIGN` hex values. No light theme, no streak counters, no guilt chrome. Daily Anchors is still the noun for today’s list.

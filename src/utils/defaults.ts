@@ -54,13 +54,13 @@ const SEEDS: Record<Load, Seed[]> = {
   ],
 };
 
-export function seedAnchors(load: Load): Anchor[] {
+export function seedAnchors(load: Load, bufferPercent?: number): Anchor[] {
   return SEEDS[load].map((s) => ({
     id: newId(),
     title: s.title,
     dod: s.dod,
     rawMinutes: s.rawMinutes,
-    bufferedMinutes: bufferedMinutes(s.rawMinutes),
+    bufferedMinutes: bufferedMinutes(s.rawMinutes, bufferPercent),
     load: s.load,
     status: 'open',
   }));

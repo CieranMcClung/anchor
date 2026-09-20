@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import type { Load } from '../types';
 import { t } from '../copy/t';
+import { bufferedMinutes } from '../utils/duration';
 import ui from './ui.module.css';
 
 interface Props {
   open: boolean;
   defaultLoad: Load;
+  bufferPercent: number;
   onClose: () => void;
   onSave: (input: {
     title: string;
@@ -15,7 +17,7 @@ interface Props {
   }) => void;
 }
 
-export function AddAnchorSheet({ open, defaultLoad, onClose, onSave }: Props) {
+export function AddAnchorSheet({ open, defaultLoad, bufferPercent, onClose, onSave }: Props) {
   const [title, setTitle] = useState('');
   const [dod, setDod] = useState('');
   const [raw, setRaw] = useState('15');
@@ -82,6 +84,10 @@ export function AddAnchorSheet({ open, defaultLoad, onClose, onSave }: Props) {
             onChange={(e) => setRaw(e.target.value)}
           />
         </label>
+        <p className={ui.meta}>
+          Shown as {bufferedMinutes(Math.max(1, Number.parseInt(raw, 10) || 15), bufferPercent)} min
+          (+{bufferPercent}% buffer).
+        </p>
         <div className={ui.chipRow}>
           {(['low', 'medium', 'high'] as Load[]).map((opt) => (
             <button

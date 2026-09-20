@@ -43,6 +43,21 @@
   color: var(--fg-secondary);
 }
 
+.chip {
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+}
+
+.chipText {
+  margin: 0 0 var(--space-2);
+  color: var(--fg-secondary);
+  font-size: var(--type-meta);
+  line-height: var(--type-meta-lh);
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
