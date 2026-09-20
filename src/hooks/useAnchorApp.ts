@@ -11,14 +11,15 @@ import {
   type ParkItem,
   type Route,
   type Settings,
+  type UnstickDepth,
 } from '../types';
 import { completeAck, t } from '../copy/t';
 import { useClock } from './useClock';
 import { usePersistedState } from './usePersistedState';
 import { seedAnchors } from '../utils/defaults';
 import { bufferedMinutes } from '../utils/duration';
-import { getPkSnapshot, normalizePkWindows, windowsFromSettings } from '../utils/pk';
-import { rollover } from '../utils/storage';
+import { getPkSnapshot, windowsFromSettings } from '../utils/pk';
+import { normalizeSettings, rollover } from '../utils/storage';
 import { formatWallClock, newId, todayKey } from '../utils/time';
 
 export interface ToastState {
@@ -40,18 +41,35 @@ function pauseFocus(focus: FocusSession, at: number): FocusSession {
   };
 }
 
-function sessionFromAnchor(anchor: Anchor): FocusSession {
+function applyBuffer(state: AppState, percent: number): AppState {
+  return {
+    ...state,
+    anchors: state.anchors.map((a) => ({
+      ...a,
+      bufferedMinutes: bufferedMinutes(a.rawMinutes, percent),
+    })),
+    focus: state.focus
+      ? {
+          ...state.focus,
+          bufferedMinutes: bufferedMinutes(state.focus.rawMinutes, percent),
+        }
+      : null,
+  };
+}
+
+function sessionFromAnchor(anchor: Anchor, bufferPercent: number): FocusSession {
   return {
     title: anchor.title,
     dod: anchor.dod,
     load: anchor.load,
     rawMinutes: anchor.rawMinutes,
-    bufferedMinutes: anchor.bufferedMinutes,
+    bufferedMinutes: bufferedMinutes(anchor.rawMinutes, bufferPercent),
     anchorId: anchor.id,
     parkId: null,
     runState: 'ready',
     accumulatedMs: 0,
     runningSince: null,
+    hyperfocusDismissed: false,
   };
 }
 
@@ -61,6 +79,27 @@ function nextSwapTarget(state: AppState, current: FocusSession): Anchor | null {
   );
   const same = open.find((a) => a.load === current.load);
   return same ?? open[0] ?? null;
+}
+
+function nextLighterTarget(
+  state: AppState,
+  fromLoad: Load,
+  excludeId: string | null
+): Anchor | null {
+  const open = state.anchors.filter(
+    (a) => a.status === 'open' && a.id !== excludeId
+  );
+  const order: Load[] =
+    fromLoad === 'high'
+      ? ['low', 'medium', 'high']
+      : fromLoad === 'medium'
+        ? ['low', 'medium', 'high']
+        : ['low', 'medium', 'high'];
+  for (const load of order) {
+    const hit = open.find((a) => a.load === load);
+    if (hit) return hit;
+  }
+  return open[0] ?? null;
 }
 
 function openCount(anchors: Anchor[]): number {
@@ -74,6 +113,9 @@ export function useAnchorApp() {
   const [toast, setToast] = useState<ToastState | null>(null);
   const [captureOpen, setCaptureOpen] = useState(false);
   const [unstickOpen, setUnstickOpen] = useState(false);
+  const [unstickDepth, setUnstickDepth] = useState<UnstickDepth>('standard');
+  const [overwhelmOpen, setOverwhelmOpen] = useState(false);
+  const [overwhelmLoad, setOverwhelmLoad] = useState<Load>('medium');
   const [addOpen, setAddOpen] = useState(false);
 
   useEffect(() => {
@@ -82,6 +124,7 @@ export function useAnchorApp() {
       update((prev) => rollover(prev, now));
       setRoute('today');
       setUnstickOpen(false);
+      setOverwhelmOpen(false);
     }
   }, [now, state.date, state.dose.date, update]);
 
@@ -103,7 +146,9 @@ export function useAnchorApp() {
         ...prev,
         load,
         anchors:
-          seed && prev.anchors.length === 0 ? seedAnchors(load) : prev.anchors,
+          seed && prev.anchors.length === 0
+            ? seedAnchors(load, prev.settings.bufferPercent)
+            : prev.anchors,
       }));
     },
     [update]
@@ -155,7 +200,10 @@ export function useAnchorApp() {
   const startAnchor = useCallback(
     (anchor: Anchor) => {
       if (state.restMode) return;
-      update((prev) => ({ ...prev, focus: sessionFromAnchor(anchor) }));
+      update((prev) => ({
+        ...prev,
+        focus: sessionFromAnchor(anchor, prev.settings.bufferPercent),
+      }));
       setRoute('today');
     },
     [state.restMode, update]
@@ -184,9 +232,16 @@ export function useAnchorApp() {
     );
   }, [update]);
 
+  const toggleStartPause = useCallback(() => {
+    if (!state.focus) return;
+    if (state.focus.runState === 'running') pauseFocusAction();
+    else beginFocus();
+  }, [beginFocus, pauseFocusAction, state.focus]);
+
   const notThis = useCallback(() => {
     update((prev) => ({ ...prev, focus: null }));
     setUnstickOpen(false);
+    setOverwhelmOpen(false);
   }, [update]);
 
   const swapFocus = useCallback(() => {
@@ -197,7 +252,7 @@ export function useAnchorApp() {
       const snapshot = prev.focus;
       return {
         ...prev,
-        focus: sessionFromAnchor(next),
+        focus: sessionFromAnchor(next, prev.settings.bufferPercent),
         undo: {
           kind: 'swap',
           focus: snapshot,
@@ -228,10 +283,11 @@ export function useAnchorApp() {
     update((prev) => {
       if (!prev.focus) return prev;
       completedHigh = prev.focus.load === 'high';
-      const { anchorId, parkId } = prev.focus;
+      const { anchorId, parkId, title } = prev.focus;
       return {
         ...prev,
         focus: null,
+        completedToday: [...prev.completedToday, title],
         anchors: prev.anchors.map((a) =>
           a.id === anchorId ? { ...a, status: 'done' as const } : a
         ),
@@ -239,6 +295,7 @@ export function useAnchorApp() {
       };
     });
     setUnstickOpen(false);
+    setOverwhelmOpen(false);
     showToast({ title: ack.title, body: ack.body });
     return completedHigh;
   }, [showToast, update]);
@@ -254,7 +311,10 @@ export function useAnchorApp() {
           title: input.title.trim(),
           dod: input.dod.trim(),
           rawMinutes: input.rawMinutes,
-          bufferedMinutes: bufferedMinutes(input.rawMinutes),
+          bufferedMinutes: bufferedMinutes(
+            input.rawMinutes,
+            prev.settings.bufferPercent
+          ),
           load: input.load,
           status: 'open',
         };
@@ -281,21 +341,24 @@ export function useAnchorApp() {
   const startParkItem = useCallback(
     (item: ParkItem) => {
       if (state.restMode) return;
-      const raw = item.rawMinutes ?? 15;
-      const load = item.load ?? 'medium';
-      const session: FocusSession = {
-        title: item.text,
-        dod: 'It’s done when you say it is.',
-        load,
-        rawMinutes: raw,
-        bufferedMinutes: bufferedMinutes(raw),
-        anchorId: null,
-        parkId: item.id,
-        runState: 'ready',
-        accumulatedMs: 0,
-        runningSince: null,
-      };
-      update((prev) => ({ ...prev, focus: session }));
+      update((prev) => {
+        const raw = item.rawMinutes ?? 15;
+        const load = item.load ?? 'medium';
+        const session: FocusSession = {
+          title: item.text,
+          dod: 'It’s done when you say it is.',
+          load,
+          rawMinutes: raw,
+          bufferedMinutes: bufferedMinutes(raw, prev.settings.bufferPercent),
+          anchorId: null,
+          parkId: item.id,
+          runState: 'ready',
+          accumulatedMs: 0,
+          runningSince: null,
+          hyperfocusDismissed: false,
+        };
+        return { ...prev, focus: session };
+      });
       setRoute('today');
     },
     [state.restMode, update]
@@ -320,6 +383,7 @@ export function useAnchorApp() {
     }));
     setRoute('rest');
     setUnstickOpen(false);
+    setOverwhelmOpen(false);
     setCaptureOpen(false);
     setAddOpen(false);
     showToast({ title: t('restMode.enter.confirm') });
@@ -362,7 +426,10 @@ export function useAnchorApp() {
               title: candidate.title,
               dod: candidate.dod,
               rawMinutes: candidate.rawMinutes,
-              bufferedMinutes: bufferedMinutes(candidate.rawMinutes),
+              bufferedMinutes: bufferedMinutes(
+                candidate.rawMinutes,
+                prev.settings.bufferPercent
+              ),
               load: candidate.load,
               status: 'open',
             }
@@ -380,13 +447,71 @@ export function useAnchorApp() {
 
   const updateSettings = useCallback(
     (partial: Partial<Settings>) => {
-      update((prev) => ({
-        ...prev,
-        settings: normalizePkWindows({ ...prev.settings, ...partial }),
-      }));
+      update((prev) => {
+        const settings = normalizeSettings({ ...prev.settings, ...partial });
+        const next = { ...prev, settings };
+        if (settings.bufferPercent !== prev.settings.bufferPercent) {
+          return applyBuffer(next, settings.bufferPercent);
+        }
+        return next;
+      });
     },
     [update]
   );
+
+  const openUnstick = useCallback((depth: UnstickDepth = 'standard') => {
+    setUnstickDepth(depth);
+    setUnstickOpen(true);
+  }, []);
+
+  const tooHard = useCallback(() => {
+    openUnstick('deeper');
+  }, [openUnstick]);
+
+  const overwhelmFocus = useCallback(() => {
+    const current = state.focus;
+    if (!current) return;
+    setOverwhelmLoad(current.load);
+    const item: ParkItem = {
+      id: newId(),
+      text: current.title,
+      createdAt: Date.now(),
+      load: current.load,
+      rawMinutes: current.rawMinutes,
+    };
+    update((prev) => ({
+      ...prev,
+      focus: null,
+      park: [item, ...prev.park],
+    }));
+    setUnstickOpen(false);
+    setOverwhelmOpen(true);
+  }, [state.focus, update]);
+
+  const swapFromOverwhelm = useCallback(() => {
+    update((prev) => {
+      const next = nextLighterTarget(prev, overwhelmLoad, null);
+      if (!next) return prev;
+      return {
+        ...prev,
+        focus: sessionFromAnchor(next, prev.settings.bufferPercent),
+      };
+    });
+    setOverwhelmOpen(false);
+    showToast({ title: t('swap.done') });
+  }, [overwhelmLoad, showToast, update]);
+
+  const dismissOverwhelm = useCallback(() => {
+    setOverwhelmOpen(false);
+  }, []);
+
+  const dismissHyperfocus = useCallback(() => {
+    update((prev) =>
+      prev.focus
+        ? { ...prev, focus: { ...prev.focus, hyperfocusDismissed: true } }
+        : prev
+    );
+  }, [update]);
 
   const elapsedMs = useMemo(() => {
     const f = state.focus;
@@ -415,6 +540,10 @@ export function useAnchorApp() {
     (a) => a.status === 'open' && a.id !== state.focus?.anchorId
   );
 
+  const parkedToday = state.park.filter(
+    (p) => todayKey(new Date(p.createdAt)) === state.date
+  ).length;
+
   return {
     state,
     now,
@@ -427,6 +556,8 @@ export function useAnchorApp() {
     setCaptureOpen,
     unstickOpen,
     setUnstickOpen,
+    unstickDepth,
+    overwhelmOpen,
     addOpen,
     setAddOpen,
     elapsedMs,
@@ -435,6 +566,7 @@ export function useAnchorApp() {
     canSwap,
     showComedownNudge,
     showRestSuggest,
+    parkedToday,
     chooseLoad,
     skipLoad,
     logDose,
@@ -442,6 +574,7 @@ export function useAnchorApp() {
     startAnchor,
     beginFocus,
     pauseFocusAction,
+    toggleStartPause,
     notThis,
     swapFocus,
     completeFocus,
@@ -455,6 +588,12 @@ export function useAnchorApp() {
     dismissComedown,
     bringForward,
     updateSettings,
+    openUnstick,
+    tooHard,
+    overwhelmFocus,
+    swapFromOverwhelm,
+    dismissOverwhelm,
+    dismissHyperfocus,
     showToast,
     emptyDose: () =>
       update((prev) => ({ ...prev, dose: DEFAULT_DOSE(todayKey()) })),

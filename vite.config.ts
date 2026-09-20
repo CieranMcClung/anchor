@@ -14,7 +14,7 @@ function serviceWorkerPlugin(): Plugin {
         '/anchor/site.webmanifest',
         ...files,
       ]
-      const source = `const CACHE = 'anchor-p0-v2';
+      const source = `const CACHE = 'anchor-p1-v1';
 const ASSETS = ${JSON.stringify(precache)};
 self.addEventListener('install', (event) => {
   event.waitUntil(

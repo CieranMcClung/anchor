@@ -21,7 +21,13 @@ describe('focus-energy PK placeholders', () => {
     expect(DEFAULT_PK_WINDOWS.peakEndHours).toBe(10);
     expect(DEFAULT_PK_WINDOWS.comedownEndHours).toBe(12);
     expect(PEAK_PLATEAU_START_HOURS).toBe(6);
-    expect(DEFAULT_SETTINGS).toEqual(DEFAULT_PK_WINDOWS);
+    expect(DEFAULT_SETTINGS.onsetEndHours).toBe(2);
+    expect(DEFAULT_SETTINGS.peakEndHours).toBe(10);
+    expect(DEFAULT_SETTINGS.comedownEndHours).toBe(12);
+    expect(PEAK_PLATEAU_START_HOURS).toBe(6);
+    expect(DEFAULT_SETTINGS.bufferPercent).toBe(40);
+    expect(DEFAULT_SETTINGS.hyperfocusMinutes).toBe(60);
+    expect(DEFAULT_SETTINGS.aiBrainDump).toBe(false);
     expect(isSupersededPkPlaceholder(DEFAULT_PK_WINDOWS)).toBe(false);
     expect(
       isSupersededPkPlaceholder({
@@ -70,9 +76,16 @@ describe('focus-energy PK placeholders', () => {
 });
 
 describe('duration buffer', () => {
-  it('multiplies by 1.4 and rounds to nearest 5 minutes', () => {
+  it('defaults to 40% (×1.4) and rounds to nearest 5 minutes', () => {
     expect(bufferedMinutes(10)).toBe(15);
     expect(bufferedMinutes(25)).toBe(35);
     expect(bufferedMinutes(45)).toBe(65);
+  });
+
+  it('uses a 30–50% setting for displayed durations', () => {
+    expect(bufferedMinutes(20, 30)).toBe(25);
+    expect(bufferedMinutes(20, 40)).toBe(30);
+    expect(bufferedMinutes(20, 50)).toBe(30);
+    expect(bufferedMinutes(25, 50)).toBe(40);
   });
 });

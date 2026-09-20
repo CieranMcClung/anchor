@@ -8,7 +8,11 @@ import {
   type Settings,
 } from '../types';
 import { todayKey } from './time';
-import { bufferedMinutes } from './duration';
+import {
+  bufferedMinutes,
+  clampBufferPercent,
+  clampHyperfocusMinutes,
+} from './duration';
 import { isSupersededPkPlaceholder, normalizePkWindows } from './pk';
 
 const KEY = 'anchor-p0-v1';
@@ -28,6 +32,7 @@ export function createInitialState(date = todayKey()): AppState {
     carryCandidates: [],
     undo: null,
     settings: { ...DEFAULT_SETTINGS },
+    completedToday: [],
   };
 }
 
@@ -59,19 +64,26 @@ function isLoad(v: unknown): v is Load {
   return v === 'low' || v === 'medium' || v === 'high';
 }
 
+export function normalizeSettings(raw: Partial<Settings> | Record<string, unknown>): Settings {
+  const pk = normalizePkWindows(raw);
+  return {
+    ...pk,
+    bufferPercent: clampBufferPercent(
+      typeof raw.bufferPercent === 'number' ? raw.bufferPercent : DEFAULT_SETTINGS.bufferPercent
+    ),
+    hyperfocusMinutes: clampHyperfocusMinutes(
+      typeof raw.hyperfocusMinutes === 'number'
+        ? raw.hyperfocusMinutes
+        : DEFAULT_SETTINGS.hyperfocusMinutes
+    ),
+    aiBrainDump: raw.aiBrainDump === true,
+  };
+}
+
 function migrateSettings(raw: unknown): Settings {
   const nested =
     raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
-  const candidate = normalizePkWindows({
-    onsetEndHours:
-      typeof nested.onsetEndHours === 'number' ? nested.onsetEndHours : undefined,
-    peakEndHours:
-      typeof nested.peakEndHours === 'number' ? nested.peakEndHours : undefined,
-    comedownEndHours:
-      typeof nested.comedownEndHours === 'number'
-        ? nested.comedownEndHours
-        : undefined,
-  });
+  const candidate = normalizeSettings(nested);
   if (
     isSupersededPkPlaceholder({
       onsetEndHours:
@@ -82,14 +94,24 @@ function migrateSettings(raw: unknown): Settings {
         typeof nested.comedownEndHours === 'number' ? nested.comedownEndHours : 8,
     })
   ) {
-    return { ...DEFAULT_SETTINGS };
+    return {
+      ...DEFAULT_SETTINGS,
+      bufferPercent: candidate.bufferPercent,
+      hyperfocusMinutes: candidate.hyperfocusMinutes,
+      aiBrainDump: candidate.aiBrainDump,
+    };
   }
   if (
     typeof nested.onsetEndHours !== 'number' &&
     typeof nested.peakEndHours !== 'number' &&
     typeof nested.comedownEndHours !== 'number'
   ) {
-    return { ...DEFAULT_SETTINGS };
+    return {
+      ...DEFAULT_SETTINGS,
+      bufferPercent: candidate.bufferPercent,
+      hyperfocusMinutes: candidate.hyperfocusMinutes,
+      aiBrainDump: candidate.aiBrainDump,
+    };
   }
   return candidate;
 }
@@ -161,6 +183,12 @@ function migrate(raw: Record<string, unknown>): AppState {
       ? raw.parking
       : [];
 
+  const settings = migrateSettings(raw.settings);
+  const anchors = (direct.length ? direct : fromRails.slice(0, 3)).map((a) => ({
+    ...a,
+    bufferedMinutes: bufferedMinutes(a.rawMinutes, settings.bufferPercent),
+  }));
+
   return {
     date,
     load: isLoad(raw.load) ? raw.load : null,
@@ -170,7 +198,7 @@ function migrate(raw: Record<string, unknown>): AppState {
       loggedAt: typeof doseRaw?.loggedAt === 'number' ? doseRaw.loggedAt : null,
       skipped: Boolean(doseRaw?.skipped),
     },
-    anchors: direct.length ? direct : fromRails.slice(0, 3),
+    anchors,
     focus: null,
     park: parkSource.map(migratePark).filter((p): p is ParkItem => p !== null),
     restMode: Boolean(raw.restMode),
@@ -186,7 +214,10 @@ function migrate(raw: Record<string, unknown>): AppState {
       ? (raw.carryCandidates as AppState['carryCandidates'])
       : [],
     undo: null,
-    settings: migrateSettings(raw.settings),
+    settings,
+    completedToday: Array.isArray(raw.completedToday)
+      ? (raw.completedToday as unknown[]).filter((x): x is string => typeof x === 'string')
+      : [],
   };
 }
 

@@ -1,6 +1,17 @@
 import { useState } from 'react';
 import { t } from '../copy/t';
-import { DEFAULT_PK_WINDOWS, type Settings } from '../types';
+import {
+  BUFFER_PERCENT_MAX,
+  BUFFER_PERCENT_MIN,
+  DEFAULT_BUFFER_PERCENT,
+  DEFAULT_HYPERFOCUS_MINUTES,
+  DEFAULT_PK_WINDOWS,
+  HYPERFOCUS_MAX_MINUTES,
+  HYPERFOCUS_MIN_MINUTES,
+  type PkWindows,
+  type Settings,
+} from '../types';
+import { bufferedMinutes } from '../utils/duration';
 import ui from './ui.module.css';
 
 interface Props {
@@ -9,7 +20,7 @@ interface Props {
   onBack: () => void;
 }
 
-type WindowKey = keyof Settings;
+type WindowKey = keyof PkWindows;
 
 function HoursField({
   label,
@@ -125,6 +136,63 @@ export function SettingsView({ settings, onChange, onBack }: Props) {
         {t('brand.appName')} ({t('brand.formerlySubtitle')}), {t('brand.orgName')}.{' '}
         {t('disclaimer.pkZones')}
       </p>
+
+      <h2 className={ui.screenTitle} style={{ fontSize: '1.1rem' }}>
+        {t('buffer.label')}
+      </h2>
+      <label className={ui.label}>
+        {settings.bufferPercent}%
+        <input
+          className={ui.input}
+          type="range"
+          min={BUFFER_PERCENT_MIN}
+          max={BUFFER_PERCENT_MAX}
+          step={5}
+          value={settings.bufferPercent}
+          onChange={(e) => onChange({ bufferPercent: Number(e.target.value) })}
+        />
+      </label>
+      <p className={ui.meta}>
+        {t('buffer.hint')} 25 min estimate →{' '}
+        {bufferedMinutes(25, settings.bufferPercent)} min displayed. Default{' '}
+        {DEFAULT_BUFFER_PERCENT}%.
+      </p>
+
+      <h2 className={ui.screenTitle} style={{ fontSize: '1.1rem' }}>
+        {t('hyperfocus.setting')}
+      </h2>
+      <label className={ui.label}>
+        {settings.hyperfocusMinutes} min
+        <input
+          className={ui.input}
+          type="range"
+          min={HYPERFOCUS_MIN_MINUTES}
+          max={HYPERFOCUS_MAX_MINUTES}
+          step={5}
+          value={settings.hyperfocusMinutes}
+          onChange={(e) =>
+            onChange({ hyperfocusMinutes: Number(e.target.value) })
+          }
+        />
+      </label>
+      <p className={ui.meta}>
+        {t('hyperfocus.setting.hint')} Default {DEFAULT_HYPERFOCUS_MINUTES} min.
+      </p>
+
+      <h2 className={ui.screenTitle} style={{ fontSize: '1.1rem' }}>
+        {t('hotkeys.title')}
+      </h2>
+      <p className={ui.cue}>{t('hotkeys.body')}</p>
+
+      <label className={ui.label} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <input
+          type="checkbox"
+          checked={settings.aiBrainDump}
+          onChange={(e) => onChange({ aiBrainDump: e.target.checked })}
+        />
+        {t('aiBrainDump.label')}
+      </label>
+      <p className={ui.meta}>{t('aiBrainDump.hint')}</p>
 
       <button type="button" className={`${ui.btn} ${ui.btnLg} ${ui.btnGhost}`} onClick={onBack}>
         Back to Meds

@@ -5,6 +5,7 @@ import { CarryForward } from './components/CarryForward';
 import { DailyAnchorsList } from './components/DailyAnchorsList';
 import { LoadPicker } from './components/LoadPicker';
 import { MedsView } from './components/MedsView';
+import { OverwhelmSheet } from './components/OverwhelmSheet';
 import { RestGate, RestProtectionOverlay } from './components/RestProtection';
 import { SettingsView } from './components/SettingsView';
 import { SingleFocusHUD } from './components/SingleFocusHUD';
@@ -13,34 +14,102 @@ import { Toast } from './components/Toast';
 import { UnstickSheet } from './components/UnstickSheet';
 import { t } from './copy/t';
 import { useAnchorApp } from './hooks/useAnchorApp';
+import { isCaptureKey, isTypingTarget } from './utils/hotkeys';
 import ui from './components/ui.module.css';
 
 export default function App() {
   const app = useAnchorApp();
   const [loadEdit, setLoadEdit] = useState(false);
   const [postHighRest, setPostHighRest] = useState(false);
-  const { setCaptureOpen, setUnstickOpen, setAddOpen } = app;
+  const {
+    setCaptureOpen,
+    setUnstickOpen,
+    setAddOpen,
+  } = app;
+
+  const sheetOpen =
+    app.captureOpen || app.unstickOpen || app.addOpen || app.overwhelmOpen;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
-      const tag = target?.tagName?.toLowerCase();
-      if (tag === 'input' || tag === 'textarea' || target?.isContentEditable) {
-        return;
-      }
-      if (e.key === 'c' || e.key === 'C' || e.key === '/') {
-        e.preventDefault();
-        setCaptureOpen(true);
-      }
       if (e.key === 'Escape') {
         setCaptureOpen(false);
         setUnstickOpen(false);
         setAddOpen(false);
+        app.dismissOverwhelm();
+        return;
+      }
+
+      if (isTypingTarget(e.target)) return;
+
+      if (isCaptureKey(e.key)) {
+        e.preventDefault();
+        setCaptureOpen(true);
+        return;
+      }
+
+      const k = e.key.toLowerCase();
+
+      if (app.overwhelmOpen) {
+        if (k === 's') {
+          e.preventDefault();
+          app.swapFromOverwhelm();
+        }
+        if (k === 'r') {
+          e.preventDefault();
+          app.enterRest();
+        }
+        return;
+      }
+
+      if (sheetOpen) return;
+      if (app.state.restMode && e.key !== 'r' && e.key !== 'R') return;
+
+      if (e.key === ' ') {
+        if (app.state.focus) {
+          e.preventDefault();
+          app.toggleStartPause();
+        }
+        return;
+      }
+
+      if (k === 'd' && app.state.focus) {
+        e.preventDefault();
+        const high = app.completeFocus();
+        if (high) setPostHighRest(true);
+        return;
+      }
+      if (k === 'u' && app.state.focus) {
+        e.preventDefault();
+        app.openUnstick('standard');
+        return;
+      }
+      if (k === 'h' && app.state.focus) {
+        e.preventDefault();
+        app.tooHard();
+        return;
+      }
+      if (k === 'o' && app.state.focus) {
+        e.preventDefault();
+        app.overwhelmFocus();
+        return;
+      }
+      if (k === 's') {
+        e.preventDefault();
+        if (app.overwhelmOpen) app.swapFromOverwhelm();
+        else if (app.state.focus) app.swapFocus();
+        return;
+      }
+      if (k === 'r') {
+        e.preventDefault();
+        if (app.overwhelmOpen || app.state.focus) app.enterRest();
+        else if (!app.state.restMode) app.setRoute('rest');
+        return;
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [setCaptureOpen, setUnstickOpen, setAddOpen]);
+  }, [app, setAddOpen, setCaptureOpen, setUnstickOpen, sheetOpen]);
 
   const navRoute =
     app.route === 'settings' ? 'meds' : app.route === 'rest' ? 'rest' : app.route;
@@ -132,6 +201,8 @@ export default function App() {
         restMode={app.state.restMode}
         unstickOpen={app.unstickOpen}
         canSwap={app.canSwap}
+        hyperfocusMinutes={app.state.settings.hyperfocusMinutes}
+        bufferPercent={app.state.settings.bufferPercent}
         onBegin={app.beginFocus}
         onPause={app.pauseFocusAction}
         onDone={() => {
@@ -140,7 +211,10 @@ export default function App() {
         }}
         onNotThis={app.notThis}
         onSwap={app.swapFocus}
-        onUnstick={() => app.setUnstickOpen(true)}
+        onUnstick={() => app.openUnstick('standard')}
+        onTooHard={app.tooHard}
+        onOverwhelmed={app.overwhelmFocus}
+        onDismissHyperfocus={app.dismissHyperfocus}
       />
     );
   } else {
@@ -190,6 +264,10 @@ export default function App() {
           park={app.state.park}
           restMode={app.state.restMode}
           canAdd={app.canAdd}
+          zone={app.pk.zone}
+          bufferPercent={app.state.settings.bufferPercent}
+          doneCount={app.state.completedToday.length}
+          parkedToday={app.parkedToday}
           onStart={app.startAnchor}
           onChangeLoad={() => setLoadEdit(true)}
           onAdd={() => app.setAddOpen(true)}
@@ -217,26 +295,37 @@ export default function App() {
 
       <ThoughtCaptureFab
         hidden={app.captureOpen || app.state.restMode}
-        onClick={() => app.setCaptureOpen(true)}
+        onClick={() => setCaptureOpen(true)}
       />
       <ThoughtCapture
         open={app.captureOpen}
-        onClose={() => app.setCaptureOpen(false)}
-        onSave={(text, load) => app.parkThought(text, load)}
+        aiBrainDump={app.state.settings.aiBrainDump}
+        bufferPercent={app.state.settings.bufferPercent}
+        onClose={() => setCaptureOpen(false)}
+        onSave={(text, load, rawMinutes) => app.parkThought(text, load, rawMinutes)}
       />
       <AddAnchorSheet
         open={app.addOpen}
         defaultLoad={app.state.load ?? 'low'}
+        bufferPercent={app.state.settings.bufferPercent}
         onClose={() => app.setAddOpen(false)}
         onSave={app.addAnchor}
       />
       <UnstickSheet
         open={app.unstickOpen}
+        depth={app.unstickDepth}
         onPick={() => {
           app.showToast({ title: t('unstick.done') });
           app.setUnstickOpen(false);
         }}
         onDismiss={() => app.setUnstickOpen(false)}
+      />
+      <OverwhelmSheet
+        open={app.overwhelmOpen}
+        canSwap={app.canSwap}
+        onSwap={app.swapFromOverwhelm}
+        onRest={app.enterRest}
+        onDismiss={app.dismissOverwhelm}
       />
       <Toast toast={app.toast} />
       {restOverlay ? (

@@ -38,13 +38,36 @@ export interface PkWindows {
   comedownEndHours: number;
 }
 
+/** Time-estimate buffer. Displayed durations use this. Persist 30–50, default 40. */
+export const BUFFER_PERCENT_MIN = 30;
+export const BUFFER_PERCENT_MAX = 50;
+export const DEFAULT_BUFFER_PERCENT = 40;
+
+/** Soft hyperfocus chip after this many continuous minutes. Tunable 45–90. */
+export const HYPERFOCUS_MIN_MINUTES = 45;
+export const HYPERFOCUS_MAX_MINUTES = 90;
+export const DEFAULT_HYPERFOCUS_MINUTES = 60;
+
+export type UnstickDepth = 'standard' | 'deeper';
+
 export interface Settings {
   onsetEndHours: number;
   peakEndHours: number;
   comedownEndHours: number;
+  /** 30–50. Applied to every displayed buffered duration. */
+  bufferPercent: number;
+  /** 45–90. Soft chip only — never cuts focus. */
+  hyperfocusMinutes: number;
+  /** P1 B1 stub. Default off — no API. Offline parks the raw dump. */
+  aiBrainDump: boolean;
 }
 
-export const DEFAULT_SETTINGS: Settings = { ...DEFAULT_PK_WINDOWS };
+export const DEFAULT_SETTINGS: Settings = {
+  ...DEFAULT_PK_WINDOWS,
+  bufferPercent: DEFAULT_BUFFER_PERCENT,
+  hyperfocusMinutes: DEFAULT_HYPERFOCUS_MINUTES,
+  aiBrainDump: false,
+};
 
 export interface Anchor {
   id: string;
@@ -75,6 +98,8 @@ export interface FocusSession {
   runState: FocusRunState;
   accumulatedMs: number;
   runningSince: number | null;
+  /** Soft hyperfocus chip dismissed for this session. */
+  hyperfocusDismissed?: boolean;
 }
 
 export interface DoseLog {
@@ -112,6 +137,8 @@ export interface AppState {
   carryCandidates: CarryCandidate[];
   undo: UndoSnapshot | null;
   settings: Settings;
+  /** Today-only titles marked done. Rolled over with the day. Not a score. */
+  completedToday: string[];
 }
 
 export const DEFAULT_DOSE = (date: string): DoseLog => ({
